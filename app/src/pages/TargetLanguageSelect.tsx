@@ -41,7 +41,7 @@ export function TargetLanguageSelect() {
     if (!target || !level) return
     const cefr = target === 'Japanese' ? JLPT_TO_CEFR[level as JLPTLevel] : (level as CEFRLevel)
     setTarget(target, cefr)
-    navigate('/home')
+    navigate('/mode')
   }
 
   const levels = target === 'Japanese' ? JLPT_LEVELS : target === 'Dutch' ? CEFR_LEVELS : []
