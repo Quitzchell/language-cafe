@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
-import { supabase } from '@/lib/supabase'
+import { createHostedSession } from '@/lib/sessions'
 
 export function ModeSelect() {
   const { nativeLanguage, targetLanguage, proficiencyLevel, setSolo, setMultiplayer } = useSession()
@@ -23,38 +23,19 @@ export function ModeSelect() {
     setSubmitting(true)
     setError(null)
 
-    const { data: session, error: sessionError } = await supabase
-      .from('sessions')
-      .insert({ title: title.trim(), target_language: targetLanguage })
-      .select('id, title')
-      .single()
-
-    if (sessionError || !session) {
-      setError(sessionError?.message ?? 'Failed to create session')
-      setSubmitting(false)
-      return
-    }
-
-    const { data: participant, error: participantError } = await supabase
-      .from('participants')
-      .insert({
-        session_id: session.id,
-        display_name: 'Host',
-        native_language: nativeLanguage,
-        proficiency_level: proficiencyLevel,
-        is_host: true,
+    try {
+      const { session, participant } = await createHostedSession({
+        title: title.trim(),
+        targetLanguage,
+        hostNativeLanguage: nativeLanguage,
+        hostProficiencyLevel: proficiencyLevel,
       })
-      .select('id')
-      .single()
-
-    if (participantError || !participant) {
-      setError(participantError?.message ?? 'Failed to create host participant')
+      setMultiplayer(session.id, session.title, participant.id)
+      navigate('/session')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Something went wrong')
       setSubmitting(false)
-      return
     }
-
-    setMultiplayer(session.id, session.title, participant.id)
-    navigate('/session')
   }
 
   return (
@@ -87,11 +68,7 @@ export function ModeSelect() {
               placeholder="e.g. Tuesday evening café"
             />
           </label>
-          <Button
-            size="lg"
-            disabled={!title.trim() || submitting}
-            onClick={handleMultiplayer}
-          >
+          <Button size="lg" disabled={!title.trim() || submitting} onClick={handleMultiplayer}>
             {submitting ? 'Creating…' : 'Doorgaan'}
           </Button>
           {error && <p className="text-sm text-destructive">{error}</p>}
