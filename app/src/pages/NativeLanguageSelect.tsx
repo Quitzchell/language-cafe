@@ -9,7 +9,7 @@ export function NativeLanguageSelect() {
 
   function handleSelect(language: Language) {
     setNativeLanguage(language)
-    navigate('/home')
+    navigate('/target')
   }
 
   return (
