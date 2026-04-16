@@ -13,24 +13,12 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<NativeLanguageSelect />} />
-          <Route
-            path="/target"
-            element={
-              <RequireNativeLanguage>
-                <TargetLanguageSelect />
-              </RequireNativeLanguage>
-            }
-          />
-          <Route
-            path="/home"
-            element={
-              <RequireNativeLanguage>
-                <RequireTargetLanguage>
-                  <Home />
-                </RequireTargetLanguage>
-              </RequireNativeLanguage>
-            }
-          />
+          <Route element={<RequireNativeLanguage />}>
+            <Route path="/target" element={<TargetLanguageSelect />} />
+            <Route element={<RequireTargetLanguage />}>
+              <Route path="/home" element={<Home />} />
+            </Route>
+          </Route>
         </Routes>
       </BrowserRouter>
     </SessionProvider>

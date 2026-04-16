@@ -1,14 +1,13 @@
-import { Navigate } from 'react-router-dom'
-import type { ReactNode } from 'react'
+import { Navigate, Outlet } from 'react-router-dom'
 
 import { useSession } from '@/contexts/SessionContext'
 
-export function RequireTargetLanguage({ children }: { children: ReactNode }) {
+export function RequireTargetLanguage() {
   const { targetLanguage, proficiencyLevel } = useSession()
 
   if (!targetLanguage || !proficiencyLevel) {
     return <Navigate to="/target" replace />
   }
 
-  return <>{children}</>
+  return <Outlet />
 }
