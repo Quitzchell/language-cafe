@@ -22,6 +22,18 @@ services:
     plugins:
       - name: cors
 
+  # Realtime: /realtime/v1/* -> ws://realtime-dev.supabase-realtime:4000/socket/*
+  - name: realtime-v1
+    url: http://realtime-dev.supabase-realtime:4000/socket
+    protocol: ws
+    routes:
+      - name: realtime-v1-all
+        strip_path: true
+        paths:
+          - /realtime/v1/
+    plugins:
+      - name: cors
+
 consumers:
   - username: anon
     keyauth_credentials:

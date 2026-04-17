@@ -6,6 +6,20 @@ export type HostedSession = {
   participant: { id: string }
 }
 
+export type Session = {
+  id: string
+  title: string
+  target_language: string
+}
+
+export type Participant = {
+  id: string
+  session_id: string
+  display_name: string
+  is_host: boolean
+  joined_at: string
+}
+
 type CreateHostedSessionParams = {
   title: string
   targetLanguage: Language
@@ -46,4 +60,49 @@ export async function createHostedSession({
   }
 
   return { session, participant }
+}
+
+export async function fetchSessionById(id: string): Promise<Session | null> {
+  const { data, error } = await supabase
+    .from('sessions')
+    .select('id, title, target_language')
+    .eq('id', id)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function listParticipants(sessionId: string): Promise<Participant[]> {
+  const { data, error } = await supabase
+    .from('participants')
+    .select('id, session_id, display_name, is_host, joined_at')
+    .eq('session_id', sessionId)
+    .order('joined_at', { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export function subscribeToParticipants(
+  sessionId: string,
+  onInsert: (participant: Participant) => void,
+): () => void {
+  const channel = supabase
+    .channel(`session:${sessionId}:participants`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'participants',
+        filter: `session_id=eq.${sessionId}`,
+      },
+      (payload) => onInsert(payload.new as Participant),
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
 }
