@@ -10,6 +10,7 @@ export type Session = {
   id: string
   title: string
   target_language: Language
+  host_native_language: Language
 }
 
 export type Participant = {
@@ -47,39 +48,29 @@ export async function createHostedSession({
   hostNativeLanguage,
   hostProficiencyLevel,
 }: CreateHostedSessionParams): Promise<HostedSession> {
-  const { data: session, error: sessionError } = await supabase
-    .from('sessions')
-    .insert({ title, target_language: targetLanguage })
-    .select('id, title')
-    .single()
-
-  if (sessionError || !session) {
-    throw new Error(sessionError?.message ?? 'Failed to create session')
-  }
-
-  const { data: participant, error: participantError } = await supabase
-    .from('participants')
-    .insert({
-      session_id: session.id,
-      display_name: 'Host',
-      native_language: hostNativeLanguage,
-      proficiency_level: hostProficiencyLevel,
-      is_host: true,
+  const { data, error } = await supabase
+    .rpc('create_hosted_session', {
+      p_title: title,
+      p_target_language: targetLanguage,
+      p_host_native_language: hostNativeLanguage,
+      p_host_proficiency_level: hostProficiencyLevel,
     })
-    .select('id')
-    .single()
+    .single<{ session_id: string; participant_id: string }>()
 
-  if (participantError || !participant) {
-    throw new Error(participantError?.message ?? 'Failed to create host participant')
+  if (error || !data) {
+    throw new Error(error?.message ?? 'Failed to create session')
   }
 
-  return { session, participant }
+  return {
+    session: { id: data.session_id, title },
+    participant: { id: data.participant_id },
+  }
 }
 
 export async function fetchSessionById(id: string): Promise<Session | null> {
   const { data, error } = await supabase
     .from('sessions')
-    .select('id, title, target_language')
+    .select('id, title, target_language, host_native_language')
     .eq('id', id)
     .maybeSingle()
 
@@ -90,18 +81,7 @@ export async function fetchSessionById(id: string): Promise<Session | null> {
 export async function fetchJoinContext(sessionId: string): Promise<JoinContext | null> {
   const session = await fetchSessionById(sessionId)
   if (!session) return null
-
-  const { data: host, error } = await supabase
-    .from('participants')
-    .select('native_language')
-    .eq('session_id', sessionId)
-    .eq('is_host', true)
-    .maybeSingle()
-
-  if (error) throw new Error(error.message)
-  if (!host) return null
-
-  return { session, hostNativeLanguage: host.native_language as Language }
+  return { session, hostNativeLanguage: session.host_native_language }
 }
 
 type CreateParticipantParams = {
