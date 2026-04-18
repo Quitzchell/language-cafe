@@ -1,23 +1,66 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { QRCodeSVG } from 'qrcode.react'
 
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
 import {
+  fetchSessionById,
+  isHostOfSession,
   listParticipants,
   subscribeToParticipants,
   type Participant,
+  type Session,
 } from '@/lib/sessions'
 
+type AccessState =
+  | { status: 'loading' }
+  | { status: 'not-found' }
+  | { status: 'not-host' }
+  | { status: 'ok'; session: Session }
+
 export function HostWaitingRoom() {
-  const { sessionId, sessionTitle } = useSession()
+  const { sessionId } = useParams<{ sessionId: string }>()
+  const { participantId } = useSession()
   const navigate = useNavigate()
+  const [asyncAccess, setAsyncAccess] = useState<AccessState>({ status: 'loading' })
   const [participants, setParticipants] = useState<Participant[]>([])
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (!sessionId) return
+    if (!sessionId || !participantId) return
+
+    let cancelled = false
+    ;(async () => {
+      const [session, hosts] = await Promise.all([
+        fetchSessionById(sessionId),
+        isHostOfSession(sessionId, participantId),
+      ])
+      if (cancelled) return
+      if (!session) {
+        setAsyncAccess({ status: 'not-found' })
+        return
+      }
+      if (!hosts) {
+        setAsyncAccess({ status: 'not-host' })
+        return
+      }
+      setAsyncAccess({ status: 'ok', session })
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [sessionId, participantId])
+
+  const access: AccessState = !sessionId
+    ? { status: 'not-found' }
+    : !participantId
+      ? { status: 'not-host' }
+      : asyncAccess
+
+  useEffect(() => {
+    if (access.status !== 'ok' || !sessionId) return
 
     let cancelled = false
     listParticipants(sessionId).then((rows) => {
@@ -32,13 +75,40 @@ export function HostWaitingRoom() {
       cancelled = true
       unsubscribe()
     }
-  }, [sessionId])
+  }, [access.status, sessionId])
 
-  if (!sessionId || !sessionTitle) {
-    return null
+  if (access.status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <p className="text-muted-foreground">Loading…</p>
+      </div>
+    )
   }
 
-  const joinUrl = `${window.location.origin}/join/${sessionId}`
+  if (access.status === 'not-found') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+        <h1 className="text-2xl font-semibold">Session not found</h1>
+        <p className="text-sm text-muted-foreground">
+          Double-check the link and try again.
+        </p>
+      </div>
+    )
+  }
+
+  if (access.status === 'not-host') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+        <h1 className="text-2xl font-semibold">You aren't the host of this session</h1>
+        <p className="text-sm text-muted-foreground">
+          Only the person who created the session can open this page.
+        </p>
+      </div>
+    )
+  }
+
+  const { session } = access
+  const joinUrl = `${window.location.origin}/join/${session.id}`
   const guests = participants.filter((p) => !p.is_host)
   const canStart = guests.length >= 1
 
@@ -50,7 +120,7 @@ export function HostWaitingRoom() {
 
   return (
     <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
-      <h1 className="text-3xl font-semibold">{sessionTitle}</h1>
+      <h1 className="text-3xl font-semibold">{session.title}</h1>
 
       <div className="bg-white p-4 rounded-md border border-input">
         <QRCodeSVG value={joinUrl} size={220} />
@@ -86,7 +156,7 @@ export function HostWaitingRoom() {
       <Button
         size="lg"
         disabled={!canStart}
-        onClick={() => navigate('/session/play')}
+        onClick={() => navigate(`/session/${session.id}/play`)}
       >
         Start sessie
       </Button>

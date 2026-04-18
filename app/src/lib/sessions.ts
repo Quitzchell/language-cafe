@@ -84,6 +84,22 @@ export async function fetchJoinContext(sessionId: string): Promise<JoinContext |
   return { session, hostNativeLanguage: session.host_native_language }
 }
 
+export async function isHostOfSession(
+  sessionId: string,
+  participantId: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('participants')
+    .select('id')
+    .eq('session_id', sessionId)
+    .eq('id', participantId)
+    .eq('is_host', true)
+    .maybeSingle()
+
+  if (error) return false
+  return !!data
+}
+
 type CreateParticipantParams = {
   sessionId: string
   displayName: string

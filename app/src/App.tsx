@@ -18,16 +18,16 @@ function App() {
         <Routes>
           <Route path="/join/:sessionId" element={<ParticipantJoin />} />
           <Route path="/join/:sessionId/waiting" element={<ParticipantWaitingRoom />} />
+          <Route path="/session/:sessionId" element={<HostWaitingRoom />} />
+          <Route
+            path="/session/:sessionId/play"
+            element={<div className="min-h-screen flex items-center justify-center">Gameplay coming in LC-7</div>}
+          />
           <Route path="/" element={<NativeLanguageSelect />} />
           <Route element={<RequireNativeLanguage />}>
             <Route path="/target" element={<TargetLanguageSelect />} />
             <Route element={<RequireTargetLanguage />}>
               <Route path="/mode" element={<ModeSelect />} />
-              <Route path="/session" element={<HostWaitingRoom />} />
-              <Route
-                path="/session/play"
-                element={<div className="min-h-screen flex items-center justify-center">Gameplay coming in LC-7</div>}
-              />
               <Route path="/play" element={<SoloPlayStub />} />
             </Route>
           </Route>

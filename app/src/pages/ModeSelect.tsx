@@ -39,7 +39,7 @@ export function ModeSelect() {
           hostProficiencyLevel={proficiencyLevel}
           onCreated={({ session, participant }) => {
             setMultiplayer(session.id, session.title, participant.id)
-            navigate('/session')
+            navigate(`/session/${session.id}`)
           }}
         />
       )}
