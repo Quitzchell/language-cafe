@@ -4,9 +4,10 @@ import { RequireNativeLanguage } from '@/components/RequireNativeLanguage'
 import { RequireTargetLanguage } from '@/components/RequireTargetLanguage'
 import { SessionProvider } from '@/contexts/SessionContext'
 import { HostWaitingRoom } from '@/pages/HostWaitingRoom'
-import { JoinStub } from '@/pages/JoinStub'
 import { ModeSelect } from '@/pages/ModeSelect'
 import { NativeLanguageSelect } from '@/pages/NativeLanguageSelect'
+import { ParticipantJoin } from '@/pages/ParticipantJoin'
+import { ParticipantWaitingRoom } from '@/pages/ParticipantWaitingRoom'
 import { SoloPlayStub } from '@/pages/SoloPlayStub'
 import { TargetLanguageSelect } from '@/pages/TargetLanguageSelect'
 
@@ -15,7 +16,8 @@ function App() {
     <SessionProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/join/:sessionId" element={<JoinStub />} />
+          <Route path="/join/:sessionId" element={<ParticipantJoin />} />
+          <Route path="/join/:sessionId/waiting" element={<ParticipantWaitingRoom />} />
           <Route path="/" element={<NativeLanguageSelect />} />
           <Route element={<RequireNativeLanguage />}>
             <Route path="/target" element={<TargetLanguageSelect />} />
