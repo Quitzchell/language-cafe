@@ -1,8 +1,10 @@
 import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
-import { createHostedSession, type HostedSession } from '@/lib/sessions'
+import { useAsync } from '@/hooks/useAsync'
+import { friendlyMessage } from '@/lib/errors'
 import type { CEFRLevel, Language } from '@/lib/languages'
+import { createHostedSession, type HostedSession } from '@/lib/sessions'
 
 type Props = {
   targetLanguage: Language
@@ -18,26 +20,17 @@ export function HostSessionForm({
   onCreated,
 }: Props) {
   const [title, setTitle] = useState('')
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const { loading, error, run } = useAsync(createHostedSession)
 
   async function handleSubmit() {
     if (!title.trim()) return
-    setSubmitting(true)
-    setError(null)
-
-    try {
-      const result = await createHostedSession({
-        title: title.trim(),
-        targetLanguage,
-        hostNativeLanguage,
-        hostProficiencyLevel,
-      })
-      onCreated(result)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong')
-      setSubmitting(false)
-    }
+    const result = await run({
+      title: title.trim(),
+      targetLanguage,
+      hostNativeLanguage,
+      hostProficiencyLevel,
+    })
+    if (result) onCreated(result)
   }
 
   return (
@@ -48,15 +41,15 @@ export function HostSessionForm({
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          disabled={submitting}
+          disabled={loading}
           className="border border-input bg-background rounded-md h-10 px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           placeholder="e.g. Tuesday evening café"
         />
       </label>
-      <Button size="lg" disabled={!title.trim() || submitting} onClick={handleSubmit}>
-        {submitting ? 'Creating…' : 'Doorgaan'}
+      <Button size="lg" disabled={!title.trim() || loading} onClick={handleSubmit}>
+        {loading ? 'Creating…' : 'Doorgaan'}
       </Button>
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {error && <p className="text-sm text-destructive">{friendlyMessage(error)}</p>}
     </div>
   )
 }

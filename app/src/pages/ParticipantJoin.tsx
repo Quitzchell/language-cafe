@@ -3,6 +3,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
+import { useAsync } from '@/hooks/useAsync'
+import { friendlyMessage } from '@/lib/errors'
 import {
   LANGUAGES,
   LANGUAGE_LABELS,
@@ -13,36 +15,26 @@ import {
   type JLPTLevel,
   type Language,
 } from '@/lib/languages'
-import {
-  createParticipant,
-  fetchJoinContext,
-  NameTakenError,
-  type JoinContext,
-} from '@/lib/sessions'
+import { createParticipant, fetchJoinContext } from '@/lib/sessions'
 
 export function ParticipantJoin() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const navigate = useNavigate()
   const { setMultiplayer } = useSession()
 
-  const [context, setContext] = useState<JoinContext | null>(null)
-  const [loading, setLoading] = useState(!!sessionId)
+  const loadContext = useAsync(fetchJoinContext)
+  const submit = useAsync(createParticipant)
 
   const [displayName, setDisplayName] = useState('')
   const [native, setNative] = useState<Language | null>(null)
   const [level, setLevel] = useState<CEFRLevel | JLPTLevel | null>(null)
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
+  const loadRun = loadContext.run
   useEffect(() => {
-    if (!sessionId) return
-    fetchJoinContext(sessionId)
-      .then(setContext)
-      .catch(() => setContext(null))
-      .finally(() => setLoading(false))
-  }, [sessionId])
+    if (sessionId) loadRun(sessionId)
+  }, [sessionId, loadRun])
 
-  if (loading) {
+  if (loadContext.loading) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <p className="text-muted-foreground">Loading…</p>
@@ -50,6 +42,7 @@ export function ParticipantJoin() {
     )
   }
 
+  const context = loadContext.data
   if (!context || !sessionId) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
@@ -75,7 +68,6 @@ export function ParticipantJoin() {
   function handleSelectNative(language: Language) {
     setNative(language)
     setLevel(null)
-    setError(null)
   }
 
   async function handleSubmit() {
@@ -83,29 +75,20 @@ export function ParticipantJoin() {
     const trimmed = displayName.trim()
     if (!trimmed) return
 
-    setSubmitting(true)
-    setError(null)
-    try {
-      const participant = await createParticipant({
-        sessionId,
-        displayName: trimmed,
-        nativeLanguage: native,
-        proficiencyLevel: toCEFR(practiceLanguage, level),
-      })
+    const participant = await submit.run({
+      sessionId,
+      displayName: trimmed,
+      nativeLanguage: native,
+      proficiencyLevel: toCEFR(practiceLanguage, level),
+    })
+    if (participant) {
       setMultiplayer(sessionId, session.title, participant.id)
       navigate(`/join/${sessionId}/waiting`)
-    } catch (e) {
-      if (e instanceof NameTakenError) {
-        setError('Die naam is al bezet. Kies een andere.')
-      } else {
-        setError(e instanceof Error ? e.message : 'Something went wrong')
-      }
-      setSubmitting(false)
     }
   }
 
   const canSubmit =
-    !!displayName.trim() && nativeMatches && level !== null && !submitting
+    !!displayName.trim() && nativeMatches && level !== null && !submit.loading
 
   return (
     <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
@@ -117,7 +100,7 @@ export function ParticipantJoin() {
           type="text"
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
-          disabled={submitting}
+          disabled={submit.loading}
           className="border border-input bg-background rounded-md h-10 px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           placeholder="e.g. Yuki"
         />
@@ -131,7 +114,7 @@ export function ParticipantJoin() {
             size="lg"
             variant={native === language.code ? 'default' : 'outline'}
             onClick={() => handleSelectNative(language.code)}
-            disabled={submitting}
+            disabled={submit.loading}
           >
             {language.label}
           </Button>
@@ -156,7 +139,7 @@ export function ParticipantJoin() {
                 size="lg"
                 variant={level === l ? 'default' : 'outline'}
                 onClick={() => setLevel(l)}
-                disabled={submitting}
+                disabled={submit.loading}
               >
                 {l}
               </Button>
@@ -171,10 +154,12 @@ export function ParticipantJoin() {
         disabled={!canSubmit}
         onClick={handleSubmit}
       >
-        {submitting ? 'Joining…' : 'Join session'}
+        {submit.loading ? 'Joining…' : 'Join session'}
       </Button>
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
+      {submit.error && (
+        <p className="text-sm text-destructive">{friendlyMessage(submit.error)}</p>
+      )}
     </div>
   )
 }
