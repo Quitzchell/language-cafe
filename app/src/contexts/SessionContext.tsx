@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 
-export type Language = 'Dutch' | 'Japanese'
-export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2'
+import type { CEFRLevel, Language } from '@/lib/languages'
+
 export type PlayMode = 'solo' | 'multiplayer'
 
 type SessionState = {

@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import type { CEFRLevel, Language } from '@/contexts/SessionContext'
+import type { CEFRLevel, Language } from '@/lib/languages'
 
 export type HostedSession = {
   session: { id: string; title: string }

@@ -2,27 +2,16 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
-import { useSession, type CEFRLevel, type Language } from '@/contexts/SessionContext'
-
-type JLPTLevel = 'N5' | 'N4' | 'N3' | 'N2' | 'N1'
-
-const CEFR_LEVELS: CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
-const JLPT_LEVELS: JLPTLevel[] = ['N5', 'N4', 'N3', 'N2', 'N1']
-
-const LANGUAGE_LABELS: Record<Language, string> = {
-  Dutch: 'Nederlands',
-  Japanese: '日本語',
-}
-
-const ALL_LANGUAGES: Language[] = ['Dutch', 'Japanese']
-
-const JLPT_TO_CEFR: Record<JLPTLevel, CEFRLevel> = {
-  N5: 'A1',
-  N4: 'A2',
-  N3: 'B1',
-  N2: 'B2',
-  N1: 'C1',
-}
+import { useSession } from '@/contexts/SessionContext'
+import {
+  LANGUAGE_CODES,
+  LANGUAGE_LABELS,
+  levelsForLanguage,
+  toCEFR,
+  type CEFRLevel,
+  type JLPTLevel,
+  type Language,
+} from '@/lib/languages'
 
 export function TargetLanguageSelect() {
   const { nativeLanguage, setTarget } = useSession()
@@ -30,7 +19,7 @@ export function TargetLanguageSelect() {
   const [target, setTargetLanguage] = useState<Language | null>(null)
   const [level, setLevel] = useState<CEFRLevel | JLPTLevel | null>(null)
 
-  const availableTargets = ALL_LANGUAGES.filter((l) => l !== nativeLanguage)
+  const availableTargets = LANGUAGE_CODES.filter((l) => l !== nativeLanguage)
 
   function handleTarget(language: Language) {
     setTargetLanguage(language)
@@ -39,12 +28,11 @@ export function TargetLanguageSelect() {
 
   function handleContinue() {
     if (!target || !level) return
-    const cefr = target === 'Japanese' ? JLPT_TO_CEFR[level as JLPTLevel] : (level as CEFRLevel)
-    setTarget(target, cefr)
+    setTarget(target, toCEFR(target, level))
     navigate('/mode')
   }
 
-  const levels = target === 'Japanese' ? JLPT_LEVELS : target === 'Dutch' ? CEFR_LEVELS : []
+  const levels = target ? levelsForLanguage(target) : []
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4 py-12">

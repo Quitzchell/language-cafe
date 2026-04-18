@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import { Button } from '@/components/ui/button'
 import { createHostedSession, type HostedSession } from '@/lib/sessions'
-import type { CEFRLevel, Language } from '@/contexts/SessionContext'
+import type { CEFRLevel, Language } from '@/lib/languages'
 
 type Props = {
   targetLanguage: Language

@@ -2,33 +2,23 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
-import { useSession, type CEFRLevel, type Language } from '@/contexts/SessionContext'
+import { useSession } from '@/contexts/SessionContext'
+import {
+  LANGUAGES,
+  LANGUAGE_LABELS,
+  levelsForLanguage,
+  matchesSessionLanguages,
+  toCEFR,
+  type CEFRLevel,
+  type JLPTLevel,
+  type Language,
+} from '@/lib/languages'
 import {
   createParticipant,
   fetchJoinContext,
   NameTakenError,
   type JoinContext,
 } from '@/lib/sessions'
-
-type JLPTLevel = 'N5' | 'N4' | 'N3' | 'N2' | 'N1'
-
-const CEFR_LEVELS: CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2']
-const JLPT_LEVELS: JLPTLevel[] = ['N5', 'N4', 'N3', 'N2', 'N1']
-
-const LANGUAGE_LABELS: Record<Language, string> = {
-  Dutch: 'Nederlands',
-  Japanese: '日本語',
-}
-
-const ALL_LANGUAGES: Language[] = ['Dutch', 'Japanese']
-
-const JLPT_TO_CEFR: Record<JLPTLevel, CEFRLevel> = {
-  N5: 'A1',
-  N4: 'A2',
-  N3: 'B1',
-  N2: 'B2',
-  N1: 'C1',
-}
 
 export function ParticipantJoin() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -72,17 +62,15 @@ export function ParticipantJoin() {
   }
 
   const { session, hostNativeLanguage } = context
-  const sessionLanguages: Language[] = [hostNativeLanguage, session.target_language]
-  const nativeMatches = native !== null && sessionLanguages.includes(native)
-  const practiceLanguage = native
-    ? sessionLanguages.find((l) => l !== native) ?? null
+  const nativeMatches =
+    native !== null &&
+    matchesSessionLanguages(native, hostNativeLanguage, session.target_language)
+  const practiceLanguage: Language | null = native
+    ? native === hostNativeLanguage
+      ? session.target_language
+      : hostNativeLanguage
     : null
-  const levels: (CEFRLevel | JLPTLevel)[] =
-    practiceLanguage === 'Japanese'
-      ? JLPT_LEVELS
-      : practiceLanguage === 'Dutch'
-        ? CEFR_LEVELS
-        : []
+  const levels = practiceLanguage ? levelsForLanguage(practiceLanguage) : []
 
   function handleSelectNative(language: Language) {
     setNative(language)
@@ -91,14 +79,9 @@ export function ParticipantJoin() {
   }
 
   async function handleSubmit() {
-    if (!sessionId || !native || !level || !nativeMatches) return
+    if (!sessionId || !native || !level || !nativeMatches || !practiceLanguage) return
     const trimmed = displayName.trim()
     if (!trimmed) return
-
-    const cefr =
-      practiceLanguage === 'Japanese'
-        ? JLPT_TO_CEFR[level as JLPTLevel]
-        : (level as CEFRLevel)
 
     setSubmitting(true)
     setError(null)
@@ -107,7 +90,7 @@ export function ParticipantJoin() {
         sessionId,
         displayName: trimmed,
         nativeLanguage: native,
-        proficiencyLevel: cefr,
+        proficiencyLevel: toCEFR(practiceLanguage, level),
       })
       setMultiplayer(sessionId, session.title, participant.id)
       navigate(`/join/${sessionId}/waiting`)
@@ -142,15 +125,15 @@ export function ParticipantJoin() {
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
         <h2 className="text-lg font-medium">What is your native language?</h2>
-        {ALL_LANGUAGES.map((language) => (
+        {LANGUAGES.map((language) => (
           <Button
-            key={language}
+            key={language.code}
             size="lg"
-            variant={native === language ? 'default' : 'outline'}
-            onClick={() => handleSelectNative(language)}
+            variant={native === language.code ? 'default' : 'outline'}
+            onClick={() => handleSelectNative(language.code)}
             disabled={submitting}
           >
-            {LANGUAGE_LABELS[language]}
+            {language.label}
           </Button>
         ))}
       </div>
