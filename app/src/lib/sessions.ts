@@ -6,11 +6,25 @@ export type HostedSession = {
   participant: { id: string }
 }
 
+export type SessionStatus = 'waiting' | 'active' | 'ended'
+
 export type Session = {
   id: string
   title: string
   target_language: Language
   host_native_language: Language
+  status: SessionStatus
+  ended_at: string | null
+}
+
+export type SessionEvent = {
+  id: string
+  session_id: string
+  type: string
+  payload: Record<string, unknown>
+  actor_participant_id: string | null
+  turn_number: number | null
+  created_at: string
 }
 
 export type Participant = {
@@ -70,12 +84,48 @@ export async function createHostedSession({
 export async function fetchSessionById(id: string): Promise<Session | null> {
   const { data, error } = await supabase
     .from('sessions')
-    .select('id, title, target_language, host_native_language')
+    .select('id, title, target_language, host_native_language, status, ended_at')
     .eq('id', id)
     .maybeSingle()
 
   if (error) throw new Error(error.message)
   return data as Session | null
+}
+
+export async function endSession(
+  sessionId: string,
+  reason: 'host' | 'inactivity',
+  actorParticipantId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('end_session', {
+    p_session_id: sessionId,
+    p_reason: reason,
+    p_actor_participant_id: actorParticipantId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export function subscribeToSessionEvents(
+  sessionId: string,
+  onInsert: (event: SessionEvent) => void,
+): () => void {
+  const channel = supabase
+    .channel(`session:${sessionId}:events`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'session_events',
+        filter: `session_id=eq.${sessionId}`,
+      },
+      (payload) => onInsert(payload.new as SessionEvent),
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
 }
 
 export async function fetchJoinContext(sessionId: string): Promise<JoinContext | null> {

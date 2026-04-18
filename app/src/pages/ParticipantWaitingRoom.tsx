@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
+import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
 import {
+  fetchSessionById,
   listParticipants,
   subscribeToParticipants,
+  subscribeToSessionEvents,
   type Participant,
 } from '@/lib/sessions'
 
 export function ParticipantWaitingRoom() {
   const { sessionId: sessionIdParam } = useParams<{ sessionId: string }>()
   const { sessionId, sessionTitle, participantId } = useSession()
+  const navigate = useNavigate()
   const [participants, setParticipants] = useState<Participant[]>([])
+  const [ended, setEnded] = useState(false)
 
   const active =
     sessionId && participantId && sessionId === sessionIdParam ? sessionId : null
@@ -23,19 +28,39 @@ export function ParticipantWaitingRoom() {
     listParticipants(active).then((rows) => {
       if (!cancelled) setParticipants(rows)
     })
+    fetchSessionById(active).then((session) => {
+      if (!cancelled && session?.status === 'ended') setEnded(true)
+    })
 
-    const unsubscribe = subscribeToParticipants(active, (p) => {
+    const unsubParticipants = subscribeToParticipants(active, (p) => {
       setParticipants((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))
+    })
+
+    const unsubEvents = subscribeToSessionEvents(active, (event) => {
+      if (event.type === 'session_ended') setEnded(true)
     })
 
     return () => {
       cancelled = true
-      unsubscribe()
+      unsubParticipants()
+      unsubEvents()
     }
   }, [active])
 
   if (!active || !sessionTitle) {
     return <Navigate to={`/join/${sessionIdParam ?? ''}`} replace />
+  }
+
+  if (ended) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
+        <h1 className="text-2xl font-semibold">Sessie is beëindigd</h1>
+        <p className="text-sm text-muted-foreground">Bedankt voor het meedoen!</p>
+        <Button size="sm" variant="outline" onClick={() => navigate('/')}>
+          Terug naar start
+        </Button>
+      </div>
+    )
   }
 
   const guests = participants.filter((p) => !p.is_host)

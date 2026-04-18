@@ -54,6 +54,17 @@ export function ParticipantJoin() {
     )
   }
 
+  if (context.session.status === 'ended') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+        <h1 className="text-2xl font-semibold">Deze sessie is al beëindigd</h1>
+        <p className="text-sm text-muted-foreground">
+          Vraag de host een nieuwe sessie te starten.
+        </p>
+      </div>
+    )
+  }
+
   const { session, hostNativeLanguage } = context
   const nativeMatches =
     native !== null &&

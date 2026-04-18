@@ -4,7 +4,10 @@ import { QRCodeSVG } from 'qrcode.react'
 
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
+import { useAsync } from '@/hooks/useAsync'
+import { friendlyMessage } from '@/lib/errors'
 import {
+  endSession,
   fetchSessionById,
   isHostOfSession,
   listParticipants,
@@ -17,6 +20,7 @@ type AccessState =
   | { status: 'loading' }
   | { status: 'not-found' }
   | { status: 'not-host' }
+  | { status: 'ended' }
   | { status: 'ok'; session: Session }
 
 export function HostWaitingRoom() {
@@ -26,6 +30,7 @@ export function HostWaitingRoom() {
   const [asyncAccess, setAsyncAccess] = useState<AccessState>({ status: 'loading' })
   const [participants, setParticipants] = useState<Participant[]>([])
   const [copied, setCopied] = useState(false)
+  const endAction = useAsync(endSession)
 
   useEffect(() => {
     if (!sessionId || !participantId) return
@@ -43,6 +48,10 @@ export function HostWaitingRoom() {
       }
       if (!hosts) {
         setAsyncAccess({ status: 'not-host' })
+        return
+      }
+      if (session.status === 'ended') {
+        setAsyncAccess({ status: 'ended' })
         return
       }
       setAsyncAccess({ status: 'ok', session })
@@ -107,6 +116,17 @@ export function HostWaitingRoom() {
     )
   }
 
+  if (access.status === 'ended') {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+        <h1 className="text-2xl font-semibold">Sessie is beëindigd</h1>
+        <Button size="sm" variant="outline" onClick={() => navigate('/')}>
+          Terug naar start
+        </Button>
+      </div>
+    )
+  }
+
   const { session } = access
   const joinUrl = `${window.location.origin}/join/${session.id}`
   const guests = participants.filter((p) => !p.is_host)
@@ -116,6 +136,13 @@ export function HostWaitingRoom() {
     await navigator.clipboard.writeText(joinUrl)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleEnd() {
+    if (!participantId) return
+    if (!window.confirm('Weet je zeker dat je de sessie wilt beëindigen?')) return
+    const result = await endAction.run(session.id, 'host', participantId)
+    if (result !== null) navigate('/')
   }
 
   return (
@@ -160,6 +187,19 @@ export function HostWaitingRoom() {
       >
         Start sessie
       </Button>
+
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={endAction.loading}
+        onClick={handleEnd}
+      >
+        {endAction.loading ? 'Beëindigen…' : 'Beëindig sessie'}
+      </Button>
+
+      {endAction.error && (
+        <p className="text-sm text-destructive">{friendlyMessage(endAction.error)}</p>
+      )}
     </div>
   )
 }
