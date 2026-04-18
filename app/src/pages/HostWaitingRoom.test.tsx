@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { act, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -84,9 +84,11 @@ describe('HostWaitingRoom', () => {
     expect(await screen.findByRole('heading', { name: 'Test session' })).toBeInTheDocument()
     expect(screen.getByText('Waiting for someone to join…')).toBeInTheDocument()
 
-    participantCallback?.(
-      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
-    )
+    act(() => {
+      participantCallback?.(
+        makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+      )
+    })
     expect(await screen.findByText('Yuki')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Participants (1)' })).toBeInTheDocument()
   })
