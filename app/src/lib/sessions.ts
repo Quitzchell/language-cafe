@@ -277,15 +277,8 @@ export function subscribeToSessionEvents(
 ): () => void {
   const channel = supabase
     .channel(`session:${sessionId}:events`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'session_events',
-        filter: `session_id=eq.${sessionId}`,
-      },
-      (payload) => onInsert(payload.new as SessionEvent),
+    .on('broadcast', { event: 'insert' }, (msg) =>
+      onInsert(msg.payload as SessionEvent),
     )
     .subscribe()
 
@@ -368,15 +361,8 @@ export function subscribeToParticipants(
 ): () => void {
   const channel = supabase
     .channel(`session:${sessionId}:participants`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'participants',
-        filter: `session_id=eq.${sessionId}`,
-      },
-      (payload) => onInsert(payload.new as Participant),
+    .on('broadcast', { event: 'insert' }, (msg) =>
+      onInsert(msg.payload as Participant),
     )
     .subscribe()
 
