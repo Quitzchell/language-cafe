@@ -97,6 +97,33 @@ services:
       supabase-db:
         condition: service_healthy
 
+  supabase-realtime:
+    # Container name encodes the tenant external_id (`realtime-dev`) that
+    # SEED_SELF_HOST auto-creates — don't rename without also updating Kong.
+    container_name: realtime-dev.supabase-realtime
+    image: supabase/realtime:v2.76.5
+    environment:
+      PORT: 4000
+      DB_HOST: supabase-db
+      DB_PORT: 5432
+      DB_USER: supabase_admin
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_NAME: postgres
+      DB_AFTER_CONNECT_QUERY: 'SET search_path TO _realtime'
+      DB_ENC_KEY: supabaserealtime
+      API_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-UpNVntn3cDxHJpq99YMc1T1AQgQpc8kzYaYCyo5JIU+hEMfXXQM=}
+      METRICS_JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-token-with-at-least-32-characters-long}
+      ERL_AFLAGS: -proto_dist inet_tcp
+      DNS_NODES: "''"
+      RLIMIT_NOFILE: "10000"
+      APP_NAME: realtime
+      SEED_SELF_HOST: "true"
+      RUN_JANITOR: "true"
+    depends_on:
+      supabase-db:
+        condition: service_healthy
+
   supabase-kong:
     image: kong/kong:3.9
     ports:
@@ -114,6 +141,7 @@ services:
     depends_on:
       - supabase-auth
       - supabase-rest
+      - supabase-realtime
 
 volumes:
   app_node_modules:

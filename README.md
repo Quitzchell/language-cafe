@@ -120,11 +120,12 @@ Unique constraint on `(session_id, display_name)`.
 
 Conversation prompt questions, always stored in English.
 
-| Column             | Type      | Description                         |
-| ------------------ | --------- | ----------------------------------- |
-| `id`               | uuid (PK) | Auto-generated                      |
-| `question`         | text      | The question in English             |
-| `proficiency_level`| text      | CEFR level: A1, A2, B1, B2, C1, C2 |
+| Column             | Type        | Description                         |
+| ------------------ | ----------- | ----------------------------------- |
+| `id`               | uuid (PK)   | Auto-generated                      |
+| `question`         | text        | The question in English             |
+| `proficiency_level`| text        | CEFR level: A1, A2, B1, B2, C1, C2 |
+| `created_at`       | timestamptz | Defaults to now()                   |
 
 #### `card_translations`
 
@@ -158,6 +159,29 @@ Cards are always authored in English. At runtime, the app uses the session's `ta
 - **Question**: `card_translations` row where `language` matches `session.target_language`
 - **Hint**: `card_translations` row where `language` matches `participant.native_language`
 - If the participant's native language is English, the hint comes directly from `cards.question`
+
+#### Editing cards
+
+Card content lives in `supabase/cards.json` — one entry per card with English text, CEFR level, and translations for every supported language. `supabase/seed.sql` is generated from it; do not edit the SQL by hand.
+
+To add or change cards:
+
+1. Edit `supabase/cards.json`.
+2. Regenerate the seed file:
+
+   ```sh
+   node scripts/generate-seed.js
+   ```
+
+3. Apply the new seed:
+
+   ```sh
+   make reset-db
+   ```
+
+The generator validates that every card has a unique id, a valid CEFR level, and translations for Dutch and Japanese. It exits non-zero on bad input.
+
+Content authored by anyone other than a native speaker should be reviewed by one before going in front of users.
 
 ## Project Structure
 
