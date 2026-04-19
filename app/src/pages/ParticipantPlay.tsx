@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { CardDisplay } from '@/components/CardDisplay'
@@ -20,6 +20,7 @@ import {
   subscribeToSessionEvents,
   type CardDrawnEvent,
   type Participant,
+  type SessionEvent,
 } from '@/lib/sessions'
 
 export function ParticipantPlay() {
@@ -34,6 +35,7 @@ export function ParticipantPlay() {
   const drawAction = useAsync(drawCard)
   const skipAction = useAsync(skipCard)
   const passAction = useAsync(passTurn)
+  const applyEventRef = useRef<(event: SessionEvent) => void>(() => {})
 
   const active =
     sessionId && participantId && sessionId === sessionIdParam ? sessionId : null
@@ -62,11 +64,7 @@ export function ParticipantPlay() {
       if (!cancelled) setCardDrawnHistory(events)
     })
 
-    const unsubParticipants = subscribeToParticipants(active, (p) => {
-      setParticipants((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))
-    })
-
-    const unsubEvents = subscribeToSessionEvents(active, (event) => {
+    const applyEvent = (event: SessionEvent) => {
       if (event.type === 'session_ended') {
         setEnded(true)
         return
@@ -78,10 +76,18 @@ export function ParticipantPlay() {
       }
       if (event.type === 'card_drawn') {
         const payload = event.payload
-        setCard({ payload, text: null })
+        let shouldFetchText = true
+        setCard((prev) => {
+          if (prev && prev.payload.card_id === payload.card_id) {
+            if (prev.text) shouldFetchText = false
+            return prev
+          }
+          return { payload, text: null }
+        })
         setCardDrawnHistory((prev) =>
           prev.some((e) => e.id === event.id) ? prev : [...prev, event],
         )
+        if (!shouldFetchText) return
         fetchCardWithTranslations(
           payload.card_id,
           payload.practice_language,
@@ -97,7 +103,14 @@ export function ParticipantPlay() {
             // Leave skeleton; silent failure.
           })
       }
+    }
+    applyEventRef.current = applyEvent
+
+    const unsubParticipants = subscribeToParticipants(active, (p) => {
+      setParticipants((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))
     })
+
+    const unsubEvents = subscribeToSessionEvents(active, applyEvent)
 
     return () => {
       cancelled = true
@@ -124,17 +137,24 @@ export function ParticipantPlay() {
 
   async function handlePick(guestId: string) {
     if (!active || !participantId) return
-    await drawAction.run(active, participantId, guestId)
+    const event = await drawAction.run(active, participantId, guestId)
+    if (event) applyEventRef.current(event)
   }
 
   async function handleSkip() {
     if (!active || !participantId) return
-    await skipAction.run(active, participantId)
+    const event = await skipAction.run(active, participantId)
+    if (event) applyEventRef.current(event)
   }
 
   async function handlePass() {
     if (!active || !participantId || !card) return
-    await passAction.run(active, participantId, card.payload.target_participant_id)
+    const event = await passAction.run(
+      active,
+      participantId,
+      card.payload.target_participant_id,
+    )
+    if (event) applyEventRef.current(event)
   }
 
   const isDealer = currentDealerId === participantId

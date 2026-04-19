@@ -31,11 +31,15 @@ export function makeParticipant(overrides: Partial<Participant> = {}): Participa
   }
 }
 
+type SessionEndedEvent = Extract<SessionEvent, { type: 'session_ended' }>
+type SessionStartedEvent = Extract<SessionEvent, { type: 'session_started' }>
+type CardDrawnEventFull = Extract<SessionEvent, { type: 'card_drawn' }>
+type CardSkippedEvent = Extract<SessionEvent, { type: 'card_skipped' }>
+type TurnPassedEventFull = Extract<SessionEvent, { type: 'turn_passed' }>
+
 export function makeSessionEndedEvent(
-  overrides: Partial<
-    Extract<SessionEvent, { type: 'session_ended' }>
-  > = {},
-): SessionEvent {
+  overrides: Partial<SessionEndedEvent> = {},
+): SessionEndedEvent {
   return {
     id: 'event-1',
     session_id: 'session-1',
@@ -49,10 +53,8 @@ export function makeSessionEndedEvent(
 }
 
 export function makeSessionStartedEvent(
-  overrides: Partial<
-    Extract<SessionEvent, { type: 'session_started' }>
-  > = {},
-): SessionEvent {
+  overrides: Partial<SessionStartedEvent> = {},
+): SessionStartedEvent {
   return {
     id: 'event-2',
     session_id: 'session-1',
@@ -67,8 +69,8 @@ export function makeSessionStartedEvent(
 
 export function makeCardDrawnEvent(
   payloadOverrides: Partial<CardDrawnPayload> = {},
-  overrides: Partial<Extract<SessionEvent, { type: 'card_drawn' }>> = {},
-): SessionEvent {
+  overrides: Partial<CardDrawnEventFull> = {},
+): CardDrawnEventFull {
   return {
     id: 'event-3',
     session_id: 'session-1',
@@ -89,8 +91,8 @@ export function makeCardDrawnEvent(
 
 export function makeCardSkippedEvent(
   payloadOverrides: Partial<{ card_id: string }> = {},
-  overrides: Partial<Extract<SessionEvent, { type: 'card_skipped' }>> = {},
-): SessionEvent {
+  overrides: Partial<CardSkippedEvent> = {},
+): CardSkippedEvent {
   return {
     id: 'event-4',
     session_id: 'session-1',
@@ -108,8 +110,8 @@ export function makeCardSkippedEvent(
 
 export function makeTurnPassedEvent(
   payloadOverrides: Partial<{ next_participant_id: string }> = {},
-  overrides: Partial<Extract<SessionEvent, { type: 'turn_passed' }>> = {},
-): SessionEvent {
+  overrides: Partial<TurnPassedEventFull> = {},
+): TurnPassedEventFull {
   return {
     id: 'event-5',
     session_id: 'session-1',

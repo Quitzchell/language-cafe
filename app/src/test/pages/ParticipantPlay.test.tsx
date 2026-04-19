@@ -86,6 +86,7 @@ describe('ParticipantPlay', () => {
     vi.mocked(passTurn).mockReset()
     vi.mocked(fetchCurrentDealer).mockReset()
     vi.mocked(fetchCurrentDealer).mockResolvedValue(null)
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({ practice: '', native: '' })
     vi.mocked(subscribeToSessionEvents).mockImplementation((_id, cb) => {
       eventCallback = cb
       return () => {}
@@ -179,7 +180,9 @@ describe('ParticipantPlay', () => {
       practice: '週末は何をするのが好きですか？',
       native: 'Wat doe je graag in het weekend?',
     })
-    vi.mocked(drawCard).mockResolvedValue('card-2')
+    vi.mocked(drawCard).mockResolvedValue(
+      makeCardDrawnEvent({ card_id: 'card-2', target_participant_id: 'guest-2' }),
+    )
 
     const user = userEvent.setup()
     renderParticipantPlay()

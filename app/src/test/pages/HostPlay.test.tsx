@@ -93,6 +93,7 @@ describe('HostPlay', () => {
     vi.mocked(fetchCurrentDealer).mockReset()
     vi.mocked(fetchCurrentDealer).mockResolvedValue(null)
     vi.mocked(fetchCardWithTranslations).mockReset()
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({ practice: '', native: '' })
     vi.mocked(subscribeToParticipants).mockImplementation(() => () => {})
     vi.mocked(subscribeToSessionEvents).mockImplementation((_id, cb) => {
       eventCallback = cb
@@ -108,7 +109,9 @@ describe('HostPlay', () => {
       makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
       makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
     ])
-    vi.mocked(drawCard).mockResolvedValue('card-1')
+    vi.mocked(drawCard).mockResolvedValue(
+      makeCardDrawnEvent({ card_id: 'card-1', target_participant_id: 'guest-1' }),
+    )
 
     const user = userEvent.setup()
     renderHostPlay()
@@ -240,7 +243,12 @@ describe('HostPlay', () => {
       practice: '週末は何をするのが好きですか？',
       native: 'Wat doe je graag in het weekend?',
     })
-    vi.mocked(skipCard).mockResolvedValue('card-2')
+    vi.mocked(skipCard).mockResolvedValue(
+      makeCardDrawnEvent(
+        { card_id: 'card-2', target_participant_id: 'guest-1' },
+        { id: 'event-skip-1' },
+      ),
+    )
 
     const user = userEvent.setup()
     renderHostPlay()
@@ -325,7 +333,9 @@ describe('HostPlay', () => {
       practice: '週末は何をするのが好きですか？',
       native: 'Wat doe je graag in het weekend?',
     })
-    vi.mocked(passTurn).mockResolvedValue(undefined)
+    vi.mocked(passTurn).mockResolvedValue(
+      makeTurnPassedEvent({ next_participant_id: 'guest-1' }),
+    )
 
     const user = userEvent.setup()
     renderHostPlay()
@@ -511,5 +521,36 @@ describe('HostPlay', () => {
     })
 
     expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
+  })
+
+  it('renders the card when drawCard resolves, even without a realtime echo', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+    ])
+    vi.mocked(drawCard).mockResolvedValue(
+      makeCardDrawnEvent({
+        card_id: 'card-1',
+        target_participant_id: 'guest-1',
+        practice_language: 'Japanese',
+        native_language: 'Dutch',
+      }),
+    )
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
+      practice: '週末は何をするのが好きですか？',
+      native: 'Wat doe je graag in het weekend?',
+    })
+
+    const user = userEvent.setup()
+    renderHostPlay()
+
+    await user.click(await screen.findByRole('button', { name: /Yuki/ }))
+
+    // No eventCallback invocation — proves dealer no longer depends on Realtime echo.
+    expect(await screen.findByText('週末は何をするのが好きですか？')).toBeInTheDocument()
+    expect(screen.getByText('Wat doe je graag in het weekend?')).toBeInTheDocument()
+    expect(await screen.findByText('Voor Yuki')).toBeInTheDocument()
   })
 })
