@@ -69,6 +69,7 @@ export class NameTakenError extends Error {
 
 type CreateHostedSessionParams = {
   title: string
+  hostDisplayName: string
   targetLanguage: Language
   hostNativeLanguage: Language
   hostProficiencyLevels: CEFRLevel[]
@@ -76,6 +77,7 @@ type CreateHostedSessionParams = {
 
 export async function createHostedSession({
   title,
+  hostDisplayName,
   targetLanguage,
   hostNativeLanguage,
   hostProficiencyLevels,
@@ -83,6 +85,7 @@ export async function createHostedSession({
   const { data, error } = await supabase
     .rpc('create_hosted_session', {
       p_title: title,
+      p_host_display_name: hostDisplayName,
       p_target_language: targetLanguage,
       p_host_native_language: hostNativeLanguage,
       p_host_proficiency_levels: hostProficiencyLevels,
@@ -90,6 +93,9 @@ export async function createHostedSession({
     .single<{ session_id: string; participant_id: string }>()
 
   if (error || !data) {
+    if (error?.code === '23505') {
+      throw new NameTakenError(hostDisplayName)
+    }
     throw new Error(error?.message ?? 'Failed to create session')
   }
 

@@ -83,12 +83,16 @@ describe('ParticipantWaitingRoom', () => {
   it('adds a new participant to the list when realtime fires', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession())
     vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: 'host-1', display_name: 'Mitchell', is_host: true }),
       makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
     ])
 
     renderWaitingRoom()
 
     expect(await screen.findByText('Yuki')).toBeInTheDocument()
+    expect(screen.getByText('Mitchell')).toBeInTheDocument()
+    expect(screen.getByText('(host)')).toBeInTheDocument()
+    expect(screen.getByText('(you)')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Participants (1)' })).toBeInTheDocument()
 
     act(() => {

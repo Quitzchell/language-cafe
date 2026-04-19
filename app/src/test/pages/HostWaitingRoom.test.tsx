@@ -81,11 +81,13 @@ describe('HostWaitingRoom', () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession())
     vi.mocked(isHostOfSession).mockResolvedValue(true)
     vi.mocked(listParticipants).mockResolvedValue([
-      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Mitchell', is_host: true }),
     ])
 
     renderHost()
     expect(await screen.findByRole('heading', { name: 'Test session' })).toBeInTheDocument()
+    expect(await screen.findByText('Mitchell')).toBeInTheDocument()
+    expect(screen.getByText('(host)')).toBeInTheDocument()
     expect(screen.getByText('Waiting for someone to join…')).toBeInTheDocument()
 
     act(() => {
@@ -131,7 +133,7 @@ describe('HostWaitingRoom', () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession())
     vi.mocked(isHostOfSession).mockResolvedValue(true)
     vi.mocked(listParticipants).mockResolvedValue([
-      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Mitchell', is_host: true }),
       makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
     ])
     vi.mocked(startSession).mockResolvedValue(undefined)

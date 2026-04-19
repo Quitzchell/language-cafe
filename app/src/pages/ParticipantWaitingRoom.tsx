@@ -64,7 +64,7 @@ export function ParticipantWaitingRoom() {
     )
   }
 
-  const guests = participants.filter((p) => !p.is_host)
+  const guestCount = participants.filter((p) => !p.is_host).length
 
   return (
     <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
@@ -73,12 +73,13 @@ export function ParticipantWaitingRoom() {
 
       <div className="flex flex-col gap-2 w-full max-w-md">
         <h2 className="text-lg font-medium">
-          Participants ({guests.length})
+          Participants ({guestCount})
         </h2>
         <ul className="flex flex-col gap-1">
-          {guests.map((p) => (
+          {participants.map((p) => (
             <li key={p.id} className="text-sm">
               {p.display_name}
+              {p.is_host && <span className="text-muted-foreground"> (host)</span>}
               {p.id === participantId && (
                 <span className="text-muted-foreground"> (you)</span>
               )}

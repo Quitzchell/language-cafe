@@ -131,8 +131,8 @@ export function HostWaitingRoom() {
 
   const { session } = access
   const joinUrl = `${window.location.origin}/join/${session.id}`
-  const guests = participants.filter((p) => !p.is_host)
-  const canStart = guests.length >= 1
+  const guestCount = participants.filter((p) => !p.is_host).length
+  const canStart = guestCount >= 1
 
   async function handleCopy() {
     await navigator.clipboard.writeText(joinUrl)
@@ -171,20 +171,20 @@ export function HostWaitingRoom() {
 
       <div className="flex flex-col gap-2 w-full max-w-md">
         <h2 className="text-lg font-medium">
-          Participants ({guests.length})
+          Participants ({guestCount})
         </h2>
-        {guests.length === 0 ? (
+        <ul className="flex flex-col gap-1">
+          {participants.map((p) => (
+            <li key={p.id} className="text-sm">
+              {p.display_name}
+              {p.is_host && <span className="text-muted-foreground"> (host)</span>}
+            </li>
+          ))}
+        </ul>
+        {guestCount === 0 && (
           <p className="text-sm text-muted-foreground italic">
             Waiting for someone to join…
           </p>
-        ) : (
-          <ul className="flex flex-col gap-1">
-            {guests.map((p) => (
-              <li key={p.id} className="text-sm">
-                {p.display_name}
-              </li>
-            ))}
-          </ul>
         )}
       </div>
 
