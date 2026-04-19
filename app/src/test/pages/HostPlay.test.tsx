@@ -75,6 +75,7 @@ function renderHostPlay() {
     {
       initialEntries: [`/session/${SESSION_ID}/play`],
       persisted: persistedAsHost,
+      sessionLiveId: SESSION_ID,
     },
   )
 }

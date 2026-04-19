@@ -1,123 +1,31 @@
-import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { CardDisplay } from '@/components/CardDisplay'
-import { DealerView, type DealerCardView } from '@/components/DealerView'
+import { DealerView } from '@/components/DealerView'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
+import { useSessionLive } from '@/contexts/SessionLive'
 import { useAsync } from '@/hooks/useAsync'
-import {
-  computeAskedThisRound,
-  drawCard,
-  fetchCardWithTranslations,
-  fetchCurrentDealer,
-  fetchSessionById,
-  listCardDrawnEvents,
-  listParticipants,
-  passTurn,
-  skipCard,
-  subscribeToParticipants,
-  subscribeToSessionEvents,
-  type CardDrawnEvent,
-  type Participant,
-  type SessionEvent,
-} from '@/lib/sessions'
+import { computeAskedThisRound, drawCard, passTurn, skipCard } from '@/lib/sessions'
 
 export function ParticipantPlay() {
   const { sessionId: sessionIdParam } = useParams<{ sessionId: string }>()
   const { sessionId, sessionTitle, participantId } = useSession()
   const navigate = useNavigate()
-  const [participants, setParticipants] = useState<Participant[]>([])
-  const [card, setCard] = useState<DealerCardView | null>(null)
-  const [currentDealerId, setCurrentDealerId] = useState<string | null>(null)
-  const [cardDrawnHistory, setCardDrawnHistory] = useState<CardDrawnEvent[]>([])
-  const [ended, setEnded] = useState(false)
+  const {
+    participants,
+    card,
+    currentDealerId,
+    cardDrawnHistory,
+    ended,
+    applyEvent,
+  } = useSessionLive()
   const drawAction = useAsync(drawCard)
   const skipAction = useAsync(skipCard)
   const passAction = useAsync(passTurn)
-  const applyEventRef = useRef<(event: SessionEvent) => void>(() => {})
 
   const active =
     sessionId && participantId && sessionId === sessionIdParam ? sessionId : null
-
-  useEffect(() => {
-    if (!active) return
-
-    let cancelled = false
-    listParticipants(active).then((rows) => {
-      if (cancelled) return
-      setParticipants(rows)
-      fetchCurrentDealer(active).then((dealerId) => {
-        if (cancelled) return
-        if (dealerId) {
-          setCurrentDealerId(dealerId)
-        } else {
-          const host = rows.find((p) => p.is_host)
-          setCurrentDealerId(host?.id ?? null)
-        }
-      })
-    })
-    fetchSessionById(active).then((session) => {
-      if (!cancelled && session?.status === 'ended') setEnded(true)
-    })
-    listCardDrawnEvents(active).then((events) => {
-      if (!cancelled) setCardDrawnHistory(events)
-    })
-
-    const applyEvent = (event: SessionEvent) => {
-      if (event.type === 'session_ended') {
-        setEnded(true)
-        return
-      }
-      if (event.type === 'turn_passed') {
-        setCurrentDealerId(event.payload.next_participant_id)
-        setCard(null)
-        return
-      }
-      if (event.type === 'card_drawn') {
-        const payload = event.payload
-        let shouldFetchText = true
-        setCard((prev) => {
-          if (prev && prev.payload.card_id === payload.card_id) {
-            if (prev.text) shouldFetchText = false
-            return prev
-          }
-          return { payload, text: null }
-        })
-        setCardDrawnHistory((prev) =>
-          prev.some((e) => e.id === event.id) ? prev : [...prev, event],
-        )
-        if (!shouldFetchText) return
-        fetchCardWithTranslations(
-          payload.card_id,
-          payload.practice_language,
-          payload.native_language,
-        )
-          .then((text) => {
-            if (cancelled) return
-            setCard((prev) =>
-              prev && prev.payload.card_id === payload.card_id ? { payload, text } : prev,
-            )
-          })
-          .catch(() => {
-            // Leave skeleton; silent failure.
-          })
-      }
-    }
-    applyEventRef.current = applyEvent
-
-    const unsubParticipants = subscribeToParticipants(active, (p) => {
-      setParticipants((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))
-    })
-
-    const unsubEvents = subscribeToSessionEvents(active, applyEvent)
-
-    return () => {
-      cancelled = true
-      unsubParticipants()
-      unsubEvents()
-    }
-  }, [active])
 
   if (!active || !sessionTitle) {
     return <Navigate to={`/join/${sessionIdParam ?? ''}`} replace />
@@ -138,13 +46,13 @@ export function ParticipantPlay() {
   async function handlePick(guestId: string) {
     if (!active || !participantId) return
     const event = await drawAction.run(active, participantId, guestId)
-    if (event) applyEventRef.current(event)
+    if (event) applyEvent(event)
   }
 
   async function handleSkip() {
     if (!active || !participantId) return
     const event = await skipAction.run(active, participantId)
-    if (event) applyEventRef.current(event)
+    if (event) applyEvent(event)
   }
 
   async function handlePass() {
@@ -154,7 +62,7 @@ export function ParticipantPlay() {
       participantId,
       card.payload.target_participant_id,
     )
-    if (event) applyEventRef.current(event)
+    if (event) applyEvent(event)
   }
 
   const isDealer = currentDealerId === participantId

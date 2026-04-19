@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 import { RequireNativeLanguage } from '@/components/RequireNativeLanguage'
 import { RequireTargetLanguage } from '@/components/RequireTargetLanguage'
+import { SessionRoute } from '@/components/SessionRoute'
 import { SessionProvider } from '@/contexts/SessionContext'
 import { HostPlay } from '@/pages/HostPlay'
 import { HostWaitingRoom } from '@/pages/HostWaitingRoom'
@@ -19,10 +20,12 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/join/:sessionId" element={<ParticipantJoin />} />
-          <Route path="/join/:sessionId/waiting" element={<ParticipantWaitingRoom />} />
-          <Route path="/join/:sessionId/play" element={<ParticipantPlay />} />
-          <Route path="/session/:sessionId" element={<HostWaitingRoom />} />
-          <Route path="/session/:sessionId/play" element={<HostPlay />} />
+          <Route element={<SessionRoute />}>
+            <Route path="/join/:sessionId/waiting" element={<ParticipantWaitingRoom />} />
+            <Route path="/join/:sessionId/play" element={<ParticipantPlay />} />
+            <Route path="/session/:sessionId" element={<HostWaitingRoom />} />
+            <Route path="/session/:sessionId/play" element={<HostPlay />} />
+          </Route>
           <Route path="/" element={<NativeLanguageSelect />} />
           <Route element={<RequireNativeLanguage />}>
             <Route path="/target" element={<TargetLanguageSelect />} />

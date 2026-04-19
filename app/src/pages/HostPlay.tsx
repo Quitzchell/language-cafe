@@ -1,163 +1,73 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import { CardDisplay } from '@/components/CardDisplay'
-import { DealerView, type DealerCardView } from '@/components/DealerView'
+import { DealerView } from '@/components/DealerView'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
+import { useSessionLive } from '@/contexts/SessionLive'
 import { useAsync } from '@/hooks/useAsync'
 import {
   computeAskedThisRound,
   drawCard,
-  fetchCardWithTranslations,
-  fetchCurrentDealer,
-  fetchSessionById,
   isHostOfSession,
-  listCardDrawnEvents,
-  listParticipants,
   passTurn,
   skipCard,
-  subscribeToParticipants,
-  subscribeToSessionEvents,
-  type CardDrawnEvent,
-  type Participant,
-  type Session,
-  type SessionEvent,
 } from '@/lib/sessions'
 
-type AccessState =
-  | { status: 'loading' }
-  | { status: 'not-found' }
-  | { status: 'not-host' }
-  | { status: 'ended' }
-  | { status: 'waiting' }
-  | { status: 'ok'; session: Session }
+type AccessStatus =
+  | 'loading'
+  | 'not-found'
+  | 'not-host'
+  | 'ended'
+  | 'waiting'
+  | 'ok'
 
 export function HostPlay() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const { participantId } = useSession()
   const navigate = useNavigate()
-  const [asyncAccess, setAsyncAccess] = useState<AccessState>({ status: 'loading' })
-  const [participants, setParticipants] = useState<Participant[]>([])
-  const [card, setCard] = useState<DealerCardView | null>(null)
-  const [currentDealerId, setCurrentDealerId] = useState<string | null>(null)
-  const [cardDrawnHistory, setCardDrawnHistory] = useState<CardDrawnEvent[]>([])
+  const {
+    session,
+    sessionLoaded,
+    participants,
+    card,
+    currentDealerId,
+    cardDrawnHistory,
+    ended,
+    applyEvent,
+  } = useSessionLive()
+  const [isHost, setIsHost] = useState<boolean | null>(null)
   const drawAction = useAsync(drawCard)
   const skipAction = useAsync(skipCard)
   const passAction = useAsync(passTurn)
-  const applyEventRef = useRef<(event: SessionEvent) => void>(() => {})
 
   useEffect(() => {
     if (!sessionId || !participantId) return
-
     let cancelled = false
-    ;(async () => {
-      const [session, hosts] = await Promise.all([
-        fetchSessionById(sessionId),
-        isHostOfSession(sessionId, participantId),
-      ])
-      if (cancelled) return
-      if (!session) {
-        setAsyncAccess({ status: 'not-found' })
-        return
-      }
-      if (!hosts) {
-        setAsyncAccess({ status: 'not-host' })
-        return
-      }
-      if (session.status === 'ended') {
-        setAsyncAccess({ status: 'ended' })
-        return
-      }
-      if (session.status === 'waiting') {
-        setAsyncAccess({ status: 'waiting' })
-        return
-      }
-      setAsyncAccess({ status: 'ok', session })
-    })()
-
+    isHostOfSession(sessionId, participantId).then((result) => {
+      if (!cancelled) setIsHost(result)
+    })
     return () => {
       cancelled = true
     }
   }, [sessionId, participantId])
 
-  const access: AccessState = !sessionId
-    ? { status: 'not-found' }
-    : !participantId
-      ? { status: 'not-host' }
-      : asyncAccess
+  const access: AccessStatus = !sessionId || !participantId
+    ? 'not-host'
+    : !sessionLoaded || isHost === null
+      ? 'loading'
+      : !session
+        ? 'not-found'
+        : !isHost
+          ? 'not-host'
+          : ended || session.status === 'ended'
+            ? 'ended'
+            : session.status === 'waiting'
+              ? 'waiting'
+              : 'ok'
 
-  useEffect(() => {
-    if (access.status !== 'ok' || !sessionId || !participantId) return
-
-    let cancelled = false
-    listParticipants(sessionId).then((rows) => {
-      if (!cancelled) setParticipants(rows)
-    })
-    fetchCurrentDealer(sessionId).then((dealerId) => {
-      if (!cancelled) setCurrentDealerId(dealerId ?? participantId)
-    })
-    listCardDrawnEvents(sessionId).then((events) => {
-      if (!cancelled) setCardDrawnHistory(events)
-    })
-
-    const applyEvent = (event: SessionEvent) => {
-      if (event.type === 'session_ended') {
-        setAsyncAccess({ status: 'ended' })
-        return
-      }
-      if (event.type === 'turn_passed') {
-        setCurrentDealerId(event.payload.next_participant_id)
-        setCard(null)
-        return
-      }
-      if (event.type === 'card_drawn') {
-        const payload = event.payload
-        let shouldFetchText = true
-        setCard((prev) => {
-          if (prev && prev.payload.card_id === payload.card_id) {
-            // Echo of an event we already applied optimistically — keep any text we've fetched.
-            if (prev.text) shouldFetchText = false
-            return prev
-          }
-          return { payload, text: null }
-        })
-        setCardDrawnHistory((prev) =>
-          prev.some((e) => e.id === event.id) ? prev : [...prev, event],
-        )
-        if (!shouldFetchText) return
-        fetchCardWithTranslations(
-          payload.card_id,
-          payload.practice_language,
-          payload.native_language,
-        )
-          .then((text) => {
-            if (cancelled) return
-            setCard((prev) =>
-              prev && prev.payload.card_id === payload.card_id ? { payload, text } : prev,
-            )
-          })
-          .catch(() => {
-            // Leave the card skeleton; surface silently.
-          })
-      }
-    }
-    applyEventRef.current = applyEvent
-
-    const unsubParticipants = subscribeToParticipants(sessionId, (p) => {
-      setParticipants((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))
-    })
-
-    const unsubEvents = subscribeToSessionEvents(sessionId, applyEvent)
-
-    return () => {
-      cancelled = true
-      unsubParticipants()
-      unsubEvents()
-    }
-  }, [access.status, sessionId, participantId])
-
-  if (access.status === 'loading') {
+  if (access === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <p className="text-muted-foreground">Loading…</p>
@@ -165,7 +75,7 @@ export function HostPlay() {
     )
   }
 
-  if (access.status === 'not-found') {
+  if (access === 'not-found') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">Session not found</h1>
@@ -173,7 +83,7 @@ export function HostPlay() {
     )
   }
 
-  if (access.status === 'not-host') {
+  if (access === 'not-host') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">You aren't the host of this session</h1>
@@ -181,7 +91,7 @@ export function HostPlay() {
     )
   }
 
-  if (access.status === 'ended') {
+  if (access === 'ended') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
         <h1 className="text-2xl font-semibold">Sessie is beëindigd</h1>
@@ -192,7 +102,7 @@ export function HostPlay() {
     )
   }
 
-  if (access.status === 'waiting') {
+  if (access === 'waiting') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
         <h1 className="text-2xl font-semibold">Sessie nog niet gestart</h1>
@@ -210,13 +120,13 @@ export function HostPlay() {
   async function handlePick(guestId: string) {
     if (!participantId || !sessionId) return
     const event = await drawAction.run(sessionId, participantId, guestId)
-    if (event) applyEventRef.current(event)
+    if (event) applyEvent(event)
   }
 
   async function handleSkip() {
     if (!participantId || !sessionId) return
     const event = await skipAction.run(sessionId, participantId)
-    if (event) applyEventRef.current(event)
+    if (event) applyEvent(event)
   }
 
   async function handlePass() {
@@ -226,7 +136,7 @@ export function HostPlay() {
       participantId,
       card.payload.target_participant_id,
     )
-    if (event) applyEventRef.current(event)
+    if (event) applyEvent(event)
   }
 
   const isDealer = currentDealerId === participantId

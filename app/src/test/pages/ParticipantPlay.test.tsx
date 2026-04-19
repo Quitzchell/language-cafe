@@ -70,6 +70,7 @@ function renderParticipantPlay() {
     {
       initialEntries: [`/join/${SESSION_ID}/play`],
       persisted: persistedAsParticipant,
+      sessionLiveId: SESSION_ID,
     },
   )
 }

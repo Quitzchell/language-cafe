@@ -4,90 +4,47 @@ import { QRCodeSVG } from 'qrcode.react'
 
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
+import { useSessionLive } from '@/contexts/SessionLive'
 import { useAsync } from '@/hooks/useAsync'
 import { friendlyMessage } from '@/lib/errors'
-import {
-  endSession,
-  fetchSessionById,
-  isHostOfSession,
-  listParticipants,
-  startSession,
-  type Participant,
-  type Session,
-} from '@/lib/sessions'
+import { endSession, isHostOfSession, startSession } from '@/lib/sessions'
 
-type AccessState =
-  | { status: 'loading' }
-  | { status: 'not-found' }
-  | { status: 'not-host' }
-  | { status: 'ended' }
-  | { status: 'ok'; session: Session }
+type AccessStatus = 'loading' | 'not-found' | 'not-host' | 'ended' | 'ok'
 
 export function HostWaitingRoom() {
   const { sessionId } = useParams<{ sessionId: string }>()
   const { participantId } = useSession()
   const navigate = useNavigate()
-  const [asyncAccess, setAsyncAccess] = useState<AccessState>({ status: 'loading' })
-  const [participants, setParticipants] = useState<Participant[]>([])
+  const { session, sessionLoaded, participants, ended } = useSessionLive()
+  const [isHost, setIsHost] = useState<boolean | null>(null)
   const [copied, setCopied] = useState(false)
   const endAction = useAsync(endSession)
   const startAction = useAsync(startSession)
 
   useEffect(() => {
     if (!sessionId || !participantId) return
-
     let cancelled = false
-    ;(async () => {
-      const [session, hosts] = await Promise.all([
-        fetchSessionById(sessionId),
-        isHostOfSession(sessionId, participantId),
-      ])
-      if (cancelled) return
-      if (!session) {
-        setAsyncAccess({ status: 'not-found' })
-        return
-      }
-      if (!hosts) {
-        setAsyncAccess({ status: 'not-host' })
-        return
-      }
-      if (session.status === 'ended') {
-        setAsyncAccess({ status: 'ended' })
-        return
-      }
-      setAsyncAccess({ status: 'ok', session })
-    })()
-
+    isHostOfSession(sessionId, participantId).then((result) => {
+      if (!cancelled) setIsHost(result)
+    })
     return () => {
       cancelled = true
     }
   }, [sessionId, participantId])
 
-  const access: AccessState = !sessionId
-    ? { status: 'not-found' }
-    : !participantId
-      ? { status: 'not-host' }
-      : asyncAccess
+  const access: AccessStatus = !sessionId || !participantId
+    ? 'not-host'
+    : !sessionLoaded || isHost === null
+      ? 'loading'
+      : !session
+        ? 'not-found'
+        : !isHost
+          ? 'not-host'
+          : ended || session.status === 'ended'
+            ? 'ended'
+            : 'ok'
 
-  useEffect(() => {
-    if (access.status !== 'ok' || !sessionId) return
-
-    let cancelled = false
-    const refresh = () => {
-      listParticipants(sessionId).then((rows) => {
-        if (!cancelled) setParticipants(rows)
-      })
-    }
-    refresh()
-    const interval = setInterval(refresh, 2000)
-
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [access.status, sessionId])
-
-  if (access.status === 'loading') {
+  if (access === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <p className="text-muted-foreground">Loading…</p>
@@ -95,7 +52,7 @@ export function HostWaitingRoom() {
     )
   }
 
-  if (access.status === 'not-found') {
+  if (access === 'not-found') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">Session not found</h1>
@@ -106,7 +63,7 @@ export function HostWaitingRoom() {
     )
   }
 
-  if (access.status === 'not-host') {
+  if (access === 'not-host') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">You aren't the host of this session</h1>
@@ -117,7 +74,7 @@ export function HostWaitingRoom() {
     )
   }
 
-  if (access.status === 'ended') {
+  if (access === 'ended') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">Sessie is beëindigd</h1>
@@ -128,8 +85,8 @@ export function HostWaitingRoom() {
     )
   }
 
-  const { session } = access
-  const joinUrl = `${window.location.origin}/join/${session.id}`
+  const activeSession = session!
+  const joinUrl = `${window.location.origin}/join/${activeSession.id}`
   const guestCount = participants.filter((p) => !p.is_host).length
   const canStart = guestCount >= 1
 
@@ -142,19 +99,19 @@ export function HostWaitingRoom() {
   async function handleEnd() {
     if (!participantId) return
     if (!window.confirm('Weet je zeker dat je de sessie wilt beëindigen?')) return
-    const result = await endAction.run(session.id, 'host', participantId)
+    const result = await endAction.run(activeSession.id, 'host', participantId)
     if (result !== null) navigate('/')
   }
 
   async function handleStart() {
     if (!participantId) return
-    const result = await startAction.run(session.id, participantId)
-    if (result !== null) navigate(`/session/${session.id}/play`)
+    const result = await startAction.run(activeSession.id, participantId)
+    if (result !== null) navigate(`/session/${activeSession.id}/play`)
   }
 
   return (
     <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
-      <h1 className="text-3xl font-semibold">{session.title}</h1>
+      <h1 className="text-3xl font-semibold">{activeSession.title}</h1>
 
       <div className="bg-white p-4 rounded-md border border-input">
         <QRCodeSVG value={joinUrl} size={220} />

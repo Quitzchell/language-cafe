@@ -1,46 +1,24 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
-import {
-  fetchSessionById,
-  listParticipants,
-  type Participant,
-} from '@/lib/sessions'
+import { useSessionLive } from '@/contexts/SessionLive'
 
 export function ParticipantWaitingRoom() {
   const { sessionId: sessionIdParam } = useParams<{ sessionId: string }>()
   const { sessionId, sessionTitle, participantId } = useSession()
   const navigate = useNavigate()
-  const [participants, setParticipants] = useState<Participant[]>([])
-  const [ended, setEnded] = useState(false)
+  const { session, participants, ended } = useSessionLive()
 
   const active =
     sessionId && participantId && sessionId === sessionIdParam ? sessionId : null
 
   useEffect(() => {
-    if (!active) return
-
-    let cancelled = false
-    const refresh = () => {
-      listParticipants(active).then((rows) => {
-        if (!cancelled) setParticipants(rows)
-      })
-      fetchSessionById(active).then((session) => {
-        if (cancelled || !session) return
-        if (session.status === 'ended') setEnded(true)
-        else if (session.status === 'active') navigate(`/join/${active}/play`)
-      })
+    if (active && session?.status === 'active') {
+      navigate(`/join/${active}/play`)
     }
-    refresh()
-    const interval = setInterval(refresh, 2000)
-
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-    }
-  }, [active, navigate])
+  }, [active, navigate, session?.status])
 
   if (!active || !sessionTitle) {
     return <Navigate to={`/join/${sessionIdParam ?? ''}`} replace />
