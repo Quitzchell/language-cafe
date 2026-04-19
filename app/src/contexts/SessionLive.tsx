@@ -31,7 +31,6 @@ type SessionLiveValue = {
   currentDealerId: string | null
   cardDrawnHistory: CardDrawnEvent[]
   ended: boolean
-  applyEvent: (event: SessionEvent) => void
 }
 
 const SessionLiveContext = createContext<SessionLiveValue | null>(null)
@@ -151,7 +150,6 @@ export function SessionLiveProvider({
         currentDealerId,
         cardDrawnHistory,
         ended,
-        applyEvent,
       }}
     >
       {children}

@@ -35,7 +35,6 @@ export function HostPlay() {
     currentDealerId,
     cardDrawnHistory,
     ended,
-    applyEvent,
   } = useSessionLive()
   const [isHost, setIsHost] = useState<boolean | null>(null)
   const drawAction = useAsync(drawCard)
@@ -119,24 +118,17 @@ export function HostPlay() {
 
   async function handlePick(guestId: string) {
     if (!participantId || !sessionId) return
-    const event = await drawAction.run(sessionId, participantId, guestId)
-    if (event) applyEvent(event)
+    await drawAction.run(sessionId, participantId, guestId)
   }
 
   async function handleSkip() {
     if (!participantId || !sessionId) return
-    const event = await skipAction.run(sessionId, participantId)
-    if (event) applyEvent(event)
+    await skipAction.run(sessionId, participantId)
   }
 
   async function handlePass() {
     if (!participantId || !sessionId || !card) return
-    const event = await passAction.run(
-      sessionId,
-      participantId,
-      card.payload.target_participant_id,
-    )
-    if (event) applyEvent(event)
+    await passAction.run(sessionId, participantId, card.payload.target_participant_id)
   }
 
   const isDealer = currentDealerId === participantId
@@ -171,7 +163,7 @@ export function HostPlay() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 py-12">
         <p className="text-xl font-medium text-center">
-          Iemand stelt jou een vraag — luister goed
+          Iemand stelt jou een vraag — luister goed {/* todo: use the player their native language for this */}
         </p>
       </div>
     )
@@ -193,7 +185,7 @@ export function HostPlay() {
           targetName={targetName}
         />
       ) : null}
-      <p className="text-muted-foreground">Wachten op {dealerName}…</p>
+      <p className="text-muted-foreground">Wachten op {dealerName}…</p> {/* todo: it is fine if this is just 'Wait for dealer' in the player their native language  */}
     </div>
   )
 }

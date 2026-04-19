@@ -524,34 +524,4 @@ describe('HostPlay', () => {
     expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
   })
 
-  it('renders the card when drawCard resolves, even without a realtime echo', async () => {
-    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
-    vi.mocked(isHostOfSession).mockResolvedValue(true)
-    vi.mocked(listParticipants).mockResolvedValue([
-      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
-      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
-    ])
-    vi.mocked(drawCard).mockResolvedValue(
-      makeCardDrawnEvent({
-        card_id: 'card-1',
-        target_participant_id: 'guest-1',
-        practice_language: 'Japanese',
-        native_language: 'Dutch',
-      }),
-    )
-    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
-      practice: '週末は何をするのが好きですか？',
-      native: 'Wat doe je graag in het weekend?',
-    })
-
-    const user = userEvent.setup()
-    renderHostPlay()
-
-    await user.click(await screen.findByRole('button', { name: /Yuki/ }))
-
-    // No eventCallback invocation — proves dealer no longer depends on Realtime echo.
-    expect(await screen.findByText('週末は何をするのが好きですか？')).toBeInTheDocument()
-    expect(screen.getByText('Wat doe je graag in het weekend?')).toBeInTheDocument()
-    expect(await screen.findByText('Voor Yuki')).toBeInTheDocument()
-  })
 })

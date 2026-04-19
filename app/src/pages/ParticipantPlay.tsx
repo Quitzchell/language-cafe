@@ -18,7 +18,6 @@ export function ParticipantPlay() {
     currentDealerId,
     cardDrawnHistory,
     ended,
-    applyEvent,
   } = useSessionLive()
   const drawAction = useAsync(drawCard)
   const skipAction = useAsync(skipCard)
@@ -45,24 +44,17 @@ export function ParticipantPlay() {
 
   async function handlePick(guestId: string) {
     if (!active || !participantId) return
-    const event = await drawAction.run(active, participantId, guestId)
-    if (event) applyEvent(event)
+    await drawAction.run(active, participantId, guestId)
   }
 
   async function handleSkip() {
     if (!active || !participantId) return
-    const event = await skipAction.run(active, participantId)
-    if (event) applyEvent(event)
+    await skipAction.run(active, participantId)
   }
 
   async function handlePass() {
     if (!active || !participantId || !card) return
-    const event = await passAction.run(
-      active,
-      participantId,
-      card.payload.target_participant_id,
-    )
-    if (event) applyEvent(event)
+    await passAction.run(active, participantId, card.payload.target_participant_id)
   }
 
   const isDealer = currentDealerId === participantId

@@ -145,52 +145,41 @@ export async function startSession(
   if (error) throw new Error(error.message)
 }
 
-export type TurnPassedEvent = Extract<SessionEvent, { type: 'turn_passed' }>
-
 export async function drawCard(
   sessionId: string,
   actorParticipantId: string,
   targetParticipantId: string,
-): Promise<CardDrawnEvent> {
-  const { data, error } = await supabase
-    .rpc('draw_card', {
-      p_session_id: sessionId,
-      p_actor_participant_id: actorParticipantId,
-      p_target_participant_id: targetParticipantId,
-    })
-    .single<CardDrawnEvent>()
-  if (error || !data) throw new Error(error?.message ?? 'Failed to draw card')
-  return data
+): Promise<void> {
+  const { error } = await supabase.rpc('draw_card', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+    p_target_participant_id: targetParticipantId,
+  })
+  if (error) throw new Error(error.message)
 }
 
 export async function skipCard(
   sessionId: string,
   actorParticipantId: string,
-): Promise<CardDrawnEvent> {
-  const { data, error } = await supabase
-    .rpc('skip_card', {
-      p_session_id: sessionId,
-      p_actor_participant_id: actorParticipantId,
-    })
-    .single<CardDrawnEvent>()
-  if (error || !data) throw new Error(error?.message ?? 'Failed to skip card')
-  return data
+): Promise<void> {
+  const { error } = await supabase.rpc('skip_card', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+  })
+  if (error) throw new Error(error.message)
 }
 
 export async function passTurn(
   sessionId: string,
   actorParticipantId: string,
   nextParticipantId: string,
-): Promise<TurnPassedEvent> {
-  const { data, error } = await supabase
-    .rpc('pass_turn', {
-      p_session_id: sessionId,
-      p_actor_participant_id: actorParticipantId,
-      p_next_participant_id: nextParticipantId,
-    })
-    .single<TurnPassedEvent>()
-  if (error || !data) throw new Error(error?.message ?? 'Failed to pass turn')
-  return data
+): Promise<void> {
+  const { error } = await supabase.rpc('pass_turn', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+    p_next_participant_id: nextParticipantId,
+  })
+  if (error) throw new Error(error.message)
 }
 
 export async function fetchCurrentDealer(sessionId: string): Promise<string | null> {
