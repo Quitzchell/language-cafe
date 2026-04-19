@@ -9,14 +9,14 @@ import { createHostedSession, type HostedSession } from '@/lib/sessions'
 type Props = {
   targetLanguage: Language
   hostNativeLanguage: Language
-  hostProficiencyLevel: CEFRLevel
+  hostProficiencyLevels: CEFRLevel[]
   onCreated: (result: HostedSession) => void
 }
 
 export function HostSessionForm({
   targetLanguage,
   hostNativeLanguage,
-  hostProficiencyLevel,
+  hostProficiencyLevels,
   onCreated,
 }: Props) {
   const [title, setTitle] = useState('')
@@ -28,7 +28,7 @@ export function HostSessionForm({
       title: title.trim(),
       targetLanguage,
       hostNativeLanguage,
-      hostProficiencyLevel,
+      hostProficiencyLevels,
     })
     if (result) onCreated(result)
   }

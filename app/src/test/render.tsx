@@ -9,7 +9,7 @@ const STORAGE_KEY = 'lc:session:v1'
 type PersistedSession = Partial<{
   nativeLanguage: string | null
   targetLanguage: string | null
-  proficiencyLevel: string | null
+  proficiencyLevels: string[]
   mode: 'solo' | 'multiplayer' | null
   sessionId: string | null
   sessionTitle: string | null

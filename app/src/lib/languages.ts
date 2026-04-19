@@ -4,12 +4,12 @@ export type CEFRLevel = (typeof CEFR_LEVELS)[number]
 export const JLPT_LEVELS = ['N5', 'N4', 'N3', 'N2', 'N1'] as const
 export type JLPTLevel = (typeof JLPT_LEVELS)[number]
 
-export const JLPT_TO_CEFR: Record<JLPTLevel, CEFRLevel> = {
-  N5: 'A1',
-  N4: 'A2',
-  N3: 'B1',
-  N2: 'B2',
-  N1: 'C1',
+export const JLPT_TO_CEFR: Record<JLPTLevel, readonly CEFRLevel[]> = {
+  N5: ['A1'],
+  N4: ['A2'],
+  N3: ['B1'],
+  N2: ['B2'],
+  N1: ['C1', 'C2'],
 }
 
 type LevelScheme = 'cefr' | 'jlpt'
@@ -32,9 +32,17 @@ export function levelsForLanguage(language: Language): readonly (CEFRLevel | JLP
   return def?.levelScheme === 'jlpt' ? JLPT_LEVELS : CEFR_LEVELS
 }
 
-export function toCEFR(language: Language, level: CEFRLevel | JLPTLevel): CEFRLevel {
+export function toCEFRLevels(
+  language: Language,
+  levels: readonly (CEFRLevel | JLPTLevel)[],
+): CEFRLevel[] {
   const def = LANGUAGES.find((l) => l.code === language)
-  return def?.levelScheme === 'jlpt' ? JLPT_TO_CEFR[level as JLPTLevel] : (level as CEFRLevel)
+  const expanded = levels.flatMap((level) =>
+    def?.levelScheme === 'jlpt'
+      ? [...JLPT_TO_CEFR[level as JLPTLevel]]
+      : [level as CEFRLevel],
+  )
+  return CEFR_LEVELS.filter((c) => expanded.includes(c))
 }
 
 export function matchesSessionLanguages(

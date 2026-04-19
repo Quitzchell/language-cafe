@@ -19,7 +19,7 @@ export function makeParticipant(overrides: Partial<Participant> = {}): Participa
     session_id: 'session-1',
     display_name: 'Alice',
     native_language: 'Dutch' as Language,
-    proficiency_level: 'B1' as CEFRLevel,
+    proficiency_levels: ['B1'] as CEFRLevel[],
     is_host: false,
     joined_at: '2026-04-18T10:00:00.000Z',
     ...overrides,

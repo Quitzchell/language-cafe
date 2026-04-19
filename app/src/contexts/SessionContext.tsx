@@ -7,7 +7,7 @@ export type PlayMode = 'solo' | 'multiplayer'
 type PersistedSession = {
   nativeLanguage: Language | null
   targetLanguage: Language | null
-  proficiencyLevel: CEFRLevel | null
+  proficiencyLevels: CEFRLevel[]
   mode: PlayMode | null
   sessionId: string | null
   sessionTitle: string | null
@@ -16,7 +16,7 @@ type PersistedSession = {
 
 type SessionState = PersistedSession & {
   setNativeLanguage: (language: Language) => void
-  setTarget: (language: Language, level: CEFRLevel) => void
+  setTarget: (language: Language, levels: CEFRLevel[]) => void
   setSolo: () => void
   setMultiplayer: (sessionId: string, sessionTitle: string, participantId: string) => void
 }
@@ -26,7 +26,7 @@ const STORAGE_KEY = 'lc:session:v1'
 const EMPTY: PersistedSession = {
   nativeLanguage: null,
   targetLanguage: null,
-  proficiencyLevel: null,
+  proficiencyLevels: [],
   mode: null,
   sessionId: null,
   sessionTitle: null,
@@ -51,7 +51,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   const [nativeLanguage, setNativeLanguage] = useState<Language | null>(initial.nativeLanguage)
   const [targetLanguage, setTargetLanguage] = useState<Language | null>(initial.targetLanguage)
-  const [proficiencyLevel, setProficiencyLevel] = useState<CEFRLevel | null>(initial.proficiencyLevel)
+  const [proficiencyLevels, setProficiencyLevels] = useState<CEFRLevel[]>(initial.proficiencyLevels)
   const [mode, setMode] = useState<PlayMode | null>(initial.mode)
   const [sessionId, setSessionId] = useState<string | null>(initial.sessionId)
   const [sessionTitle, setSessionTitle] = useState<string | null>(initial.sessionTitle)
@@ -62,7 +62,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     const payload: PersistedSession = {
       nativeLanguage,
       targetLanguage,
-      proficiencyLevel,
+      proficiencyLevels,
       mode,
       sessionId,
       sessionTitle,
@@ -73,11 +73,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     } catch {
       // sessionStorage can throw in private mode; state still lives in memory.
     }
-  }, [nativeLanguage, targetLanguage, proficiencyLevel, mode, sessionId, sessionTitle, participantId])
+  }, [nativeLanguage, targetLanguage, proficiencyLevels, mode, sessionId, sessionTitle, participantId])
 
-  function setTarget(language: Language, level: CEFRLevel) {
+  function setTarget(language: Language, levels: CEFRLevel[]) {
     setTargetLanguage(language)
-    setProficiencyLevel(level)
+    setProficiencyLevels(levels)
   }
 
   function setSolo() {
@@ -99,7 +99,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       value={{
         nativeLanguage,
         targetLanguage,
-        proficiencyLevel,
+        proficiencyLevels,
         mode,
         sessionId,
         sessionTitle,

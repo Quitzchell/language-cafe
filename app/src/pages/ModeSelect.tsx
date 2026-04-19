@@ -6,7 +6,7 @@ import { HostSessionForm } from '@/components/HostSessionForm'
 import { useSession } from '@/contexts/SessionContext'
 
 export function ModeSelect() {
-  const { nativeLanguage, targetLanguage, proficiencyLevel, setSolo, setMultiplayer } = useSession()
+  const { nativeLanguage, targetLanguage, proficiencyLevels, setSolo, setMultiplayer } = useSession()
   const navigate = useNavigate()
   const [hosting, setHosting] = useState(false)
 
@@ -32,11 +32,11 @@ export function ModeSelect() {
         </Button>
       </div>
 
-      {hosting && targetLanguage && nativeLanguage && proficiencyLevel && (
+      {hosting && targetLanguage && nativeLanguage && proficiencyLevels.length > 0 && (
         <HostSessionForm
           targetLanguage={targetLanguage}
           hostNativeLanguage={nativeLanguage}
-          hostProficiencyLevel={proficiencyLevel}
+          hostProficiencyLevels={proficiencyLevels}
           onCreated={({ session, participant }) => {
             setMultiplayer(session.id, session.title, participant.id)
             navigate(`/session/${session.id}`)

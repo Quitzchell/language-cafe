@@ -49,7 +49,7 @@ describe('ModeSelect multiplayer flow', () => {
         persisted: {
           nativeLanguage: 'Dutch',
           targetLanguage: 'Japanese',
-          proficiencyLevel: 'B1',
+          proficiencyLevels: ['B1'],
         },
       },
     )
@@ -62,7 +62,7 @@ describe('ModeSelect multiplayer flow', () => {
       title: 'Tuesday café',
       targetLanguage: 'Japanese',
       hostNativeLanguage: 'Dutch',
-      hostProficiencyLevel: 'B1',
+      hostProficiencyLevels: ['B1'],
     })
     expect(await screen.findByText('session route session-abc')).toBeInTheDocument()
   })
