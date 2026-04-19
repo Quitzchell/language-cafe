@@ -7,16 +7,19 @@ import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
 import { useAsync } from '@/hooks/useAsync'
 import {
+  computeAskedThisRound,
   drawCard,
   fetchCardWithTranslations,
   fetchCurrentDealer,
   fetchSessionById,
   isHostOfSession,
+  listCardDrawnEvents,
   listParticipants,
   passTurn,
   skipCard,
   subscribeToParticipants,
   subscribeToSessionEvents,
+  type CardDrawnEvent,
   type Participant,
   type Session,
 } from '@/lib/sessions'
@@ -37,6 +40,7 @@ export function HostPlay() {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [card, setCard] = useState<DealerCardView | null>(null)
   const [currentDealerId, setCurrentDealerId] = useState<string | null>(null)
+  const [cardDrawnHistory, setCardDrawnHistory] = useState<CardDrawnEvent[]>([])
   const drawAction = useAsync(drawCard)
   const skipAction = useAsync(skipCard)
   const passAction = useAsync(passTurn)
@@ -91,6 +95,9 @@ export function HostPlay() {
     fetchCurrentDealer(sessionId).then((dealerId) => {
       if (!cancelled) setCurrentDealerId(dealerId ?? participantId)
     })
+    listCardDrawnEvents(sessionId).then((events) => {
+      if (!cancelled) setCardDrawnHistory(events)
+    })
 
     const unsubParticipants = subscribeToParticipants(sessionId, (p) => {
       setParticipants((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))
@@ -103,11 +110,15 @@ export function HostPlay() {
       }
       if (event.type === 'turn_passed') {
         setCurrentDealerId(event.payload.next_participant_id)
+        setCard(null)
         return
       }
       if (event.type === 'card_drawn') {
         const payload = event.payload
         setCard({ payload, text: null })
+        setCardDrawnHistory((prev) =>
+          prev.some((e) => e.id === event.id) ? prev : [...prev, event],
+        )
         fetchCardWithTranslations(
           payload.card_id,
           payload.practice_language,
@@ -198,12 +209,15 @@ export function HostPlay() {
   }
 
   const isDealer = currentDealerId === participantId
+  const askedThisRound = computeAskedThisRound(cardDrawnHistory, participants.length)
+  const isTarget = !!card && card.payload.target_participant_id === participantId
 
   if (isDealer) {
     return (
       <DealerView
         participants={participants}
         actorParticipantId={participantId!}
+        askedParticipantIds={askedThisRound}
         card={card}
         onPick={handlePick}
         onSkip={handleSkip}
@@ -219,6 +233,16 @@ export function HostPlay() {
           pass: passAction.error,
         }}
       />
+    )
+  }
+
+  if (isTarget) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 py-12">
+        <p className="text-xl font-medium text-center">
+          Iemand stelt jou een vraag — luister goed
+        </p>
+      </div>
     )
   }
 

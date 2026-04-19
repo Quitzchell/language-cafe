@@ -33,11 +33,14 @@ vi.mock('@/lib/sessions', () => {
     passTurn: vi.fn(),
     fetchCurrentDealer: vi.fn(),
     fetchCardWithTranslations: vi.fn(),
+    listCardDrawnEvents: vi.fn(() => Promise.resolve([])),
+    computeAskedThisRound: vi.fn(() => new Set<string>()),
     NameTakenError,
   }
 })
 
 import {
+  computeAskedThisRound,
   drawCard,
   fetchCardWithTranslations,
   fetchCurrentDealer,
@@ -95,6 +98,7 @@ describe('HostPlay', () => {
       eventCallback = cb
       return () => {}
     })
+    vi.mocked(computeAskedThisRound).mockReturnValue(new Set<string>())
   })
 
   it('lists guest participants and calls drawCard on click', async () => {
@@ -117,6 +121,24 @@ describe('HostPlay', () => {
       'guest-1',
     )
     expect(screen.queryByRole('button', { name: /Host/ })).not.toBeInTheDocument()
+  })
+
+  it('excludes participants already asked this round from the picker', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+      makeParticipant({ id: 'guest-2', display_name: 'Lena', is_host: false }),
+    ])
+    vi.mocked(computeAskedThisRound).mockReturnValue(new Set(['guest-1']))
+
+    renderHostPlay()
+
+    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+
+    expect(screen.queryByRole('button', { name: /Yuki/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Lena/ })).toBeInTheDocument()
   })
 
   it('renders the card when a card_drawn event arrives', async () => {
@@ -369,7 +391,7 @@ describe('HostPlay', () => {
     expect(
       screen.queryByRole('heading', { name: 'Kies een deelnemer' }),
     ).not.toBeInTheDocument()
-    expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
+    expect(screen.queryByText('週末は何をするのが好きですか？')).not.toBeInTheDocument()
   })
 
   it('surfaces a pass error via friendlyMessage', async () => {
@@ -421,6 +443,39 @@ describe('HostPlay', () => {
     expect(
       await screen.findByText('Wachten op Yuki…'),
     ).toBeInTheDocument()
+  })
+
+  it('shows the blind message when the host is target of the current card', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Mitchell', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+    ])
+    vi.mocked(fetchCurrentDealer).mockResolvedValue('guest-1')
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
+      practice: '週末は何をするのが好きですか？',
+      native: 'Wat doe je graag in het weekend?',
+    })
+
+    renderHostPlay()
+    await screen.findByText('Wachten op Yuki…')
+
+    act(() => {
+      eventCallback?.(
+        makeCardDrawnEvent({
+          card_id: 'card-1',
+          target_participant_id: HOST_PARTICIPANT_ID,
+          practice_language: 'Japanese',
+          native_language: 'Dutch',
+        }),
+      )
+    })
+
+    expect(
+      await screen.findByText('Iemand stelt jou een vraag — luister goed'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Wachten op/)).not.toBeInTheDocument()
   })
 
   it('keeps the current card on screen when a card_skipped event arrives alone', async () => {

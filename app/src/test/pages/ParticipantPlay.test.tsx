@@ -32,6 +32,8 @@ vi.mock('@/lib/sessions', () => {
     passTurn: vi.fn(),
     fetchCurrentDealer: vi.fn(),
     fetchCardWithTranslations: vi.fn(),
+    listCardDrawnEvents: vi.fn(() => Promise.resolve([])),
+    computeAskedThisRound: vi.fn(() => new Set<string>()),
     NameTakenError,
   }
 })
@@ -101,9 +103,10 @@ describe('ParticipantPlay', () => {
     expect(await screen.findByText('Wachten op de dealer…')).toBeInTheDocument()
   })
 
-  it('renders the card when a card_drawn event arrives', async () => {
+  it('shows the blind message when a card_drawn event targets me', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
     vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: 'host-1', display_name: 'Mitchell', is_host: true }),
       makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
     ])
     vi.mocked(fetchCardWithTranslations).mockResolvedValue({
@@ -125,9 +128,44 @@ describe('ParticipantPlay', () => {
       )
     })
 
-    expect(await screen.findByText('Voor Yuki')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Iemand stelt jou een vraag — luister goed'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('週末は何をするのが好きですか？')).not.toBeInTheDocument()
+    expect(screen.queryByText('Voor Yuki')).not.toBeInTheDocument()
+  })
+
+  it('renders the card when a card_drawn event targets someone else', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: 'host-1', display_name: 'Mitchell', is_host: true }),
+      makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
+      makeParticipant({ id: 'guest-2', display_name: 'Lena' }),
+    ])
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
+      practice: '週末は何をするのが好きですか？',
+      native: 'Wat doe je graag in het weekend?',
+    })
+
+    renderParticipantPlay()
+    await screen.findByText('Wachten op de dealer…')
+
+    act(() => {
+      eventCallback?.(
+        makeCardDrawnEvent({
+          card_id: 'card-1',
+          target_participant_id: 'guest-2',
+          practice_language: 'Japanese',
+          native_language: 'Dutch',
+        }),
+      )
+    })
+
+    expect(await screen.findByText('Voor Lena')).toBeInTheDocument()
     expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
-    expect(screen.getByText('Wat doe je graag in het weekend?')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Iemand stelt jou een vraag — luister goed'),
+    ).not.toBeInTheDocument()
   })
 
   it('renders the dealer UI when turn_passed names me', async () => {
@@ -157,7 +195,7 @@ describe('ParticipantPlay', () => {
         }),
       )
     })
-    await screen.findByText('週末は何をするのが好きですか？')
+    await screen.findByText('Iemand stelt jou een vraag — luister goed')
 
     act(() => {
       eventCallback?.(

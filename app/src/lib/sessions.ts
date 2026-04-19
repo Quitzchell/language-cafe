@@ -32,9 +32,14 @@ export type CardDrawnPayload = {
   native_language: Language
 }
 
+export type CardDrawnEvent = BaseSessionEvent & {
+  type: 'card_drawn'
+  payload: CardDrawnPayload
+}
+
 export type SessionEvent =
   | (BaseSessionEvent & { type: 'session_started'; payload: Record<string, never> })
-  | (BaseSessionEvent & { type: 'card_drawn'; payload: CardDrawnPayload })
+  | CardDrawnEvent
   | (BaseSessionEvent & {
       type: 'session_ended'
       payload: { reason: 'host' | 'inactivity' }
@@ -193,6 +198,44 @@ export async function fetchCurrentDealer(sessionId: string): Promise<string | nu
   if (!data) return null
   const payload = data.payload as { next_participant_id?: string } | null
   return payload?.next_participant_id ?? null
+}
+
+export async function listCardDrawnEvents(sessionId: string): Promise<CardDrawnEvent[]> {
+  const { data, error } = await supabase
+    .from('session_events')
+    .select('id, session_id, type, payload, actor_participant_id, turn_number, created_at')
+    .eq('session_id', sessionId)
+    .eq('type', 'card_drawn')
+    .order('created_at', { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as CardDrawnEvent[]
+}
+
+// Returns the set of participant ids who have been target at least once in
+// the current round. A round has exactly N target slots (N = participant
+// count); consecutive same-target events (skips) collapse into one slot.
+// When `distinctTargetCount % N === 0`, the round just closed and the next
+// one starts fresh — returns an empty set.
+export function computeAskedThisRound(
+  events: CardDrawnEvent[],
+  participantCount: number,
+): Set<string> {
+  if (participantCount <= 0) return new Set()
+
+  const distinctTargets: string[] = []
+  let prev: string | null = null
+  for (const e of events) {
+    const target = e.payload.target_participant_id
+    if (target !== prev) {
+      distinctTargets.push(target)
+      prev = target
+    }
+  }
+
+  const slotsThisRound = distinctTargets.length % participantCount
+  if (slotsThisRound === 0) return new Set()
+  return new Set(distinctTargets.slice(-slotsThisRound))
 }
 
 export async function fetchCardWithTranslations(

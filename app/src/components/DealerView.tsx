@@ -11,6 +11,7 @@ export type DealerCardView = {
 type DealerViewProps = {
   participants: Participant[]
   actorParticipantId: string
+  askedParticipantIds: Set<string>
   card: DealerCardView | null
   onPick: (guestId: string) => void
   onSkip: () => void
@@ -22,6 +23,7 @@ type DealerViewProps = {
 export function DealerView({
   participants,
   actorParticipantId,
+  askedParticipantIds,
   card,
   onPick,
   onSkip,
@@ -29,7 +31,9 @@ export function DealerView({
   loading,
   errors,
 }: DealerViewProps) {
-  const pickables = participants.filter((p) => p.id !== actorParticipantId)
+  const pickables = participants.filter(
+    (p) => p.id !== actorParticipantId && !askedParticipantIds.has(p.id),
+  )
   const targetName = card
     ? (participants.find((p) => p.id === card.payload.target_participant_id)?.display_name ??
       'onbekend')
