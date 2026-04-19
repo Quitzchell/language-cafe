@@ -3,7 +3,6 @@ import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import type { Participant } from '@/lib/sessions'
 import { HostWaitingRoom } from '@/pages/HostWaitingRoom'
 import { renderWithProviders } from '@/test/render'
 import { makeParticipant, makeSession } from '@/test/mocks/sessions'
@@ -31,7 +30,6 @@ import {
   isHostOfSession,
   listParticipants,
   startSession,
-  subscribeToParticipants,
 } from '@/lib/sessions'
 
 const SESSION_ID = 'session-1'
@@ -62,27 +60,26 @@ function renderHost() {
 }
 
 describe('HostWaitingRoom', () => {
-  let participantCallback: ((p: Participant) => void) | null = null
-
   beforeEach(() => {
-    participantCallback = null
     vi.mocked(fetchSessionById).mockReset()
     vi.mocked(isHostOfSession).mockReset()
     vi.mocked(listParticipants).mockReset()
     vi.mocked(endSession).mockReset()
     vi.mocked(startSession).mockReset()
-    vi.mocked(subscribeToParticipants).mockImplementation((_id, cb) => {
-      participantCallback = cb
-      return () => {}
-    })
   })
 
-  it('streams a new participant from realtime into the list', async () => {
+  it('reflects new participants from the polling refresh', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession())
     vi.mocked(isHostOfSession).mockResolvedValue(true)
-    vi.mocked(listParticipants).mockResolvedValue([
-      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Mitchell', is_host: true }),
-    ])
+    vi.mocked(listParticipants)
+      .mockResolvedValueOnce([
+        makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Mitchell', is_host: true }),
+      ])
+      .mockResolvedValue([
+        makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Mitchell', is_host: true }),
+        makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+      ])
 
     renderHost()
     expect(await screen.findByRole('heading', { name: 'Test session' })).toBeInTheDocument()
@@ -90,13 +87,12 @@ describe('HostWaitingRoom', () => {
     expect(screen.getByText('(host)')).toBeInTheDocument()
     expect(screen.getByText('Waiting for someone to join…')).toBeInTheDocument()
 
-    act(() => {
-      participantCallback?.(
-        makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
-      )
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2100)
     })
     expect(await screen.findByText('Yuki')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Participants (1)' })).toBeInTheDocument()
+    vi.useRealTimers()
   })
 
   it('calls endSession and navigates home when the host confirms the end dialog', async () => {

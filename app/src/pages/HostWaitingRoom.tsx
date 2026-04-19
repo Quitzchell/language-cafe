@@ -12,7 +12,6 @@ import {
   isHostOfSession,
   listParticipants,
   startSession,
-  subscribeToParticipants,
   type Participant,
   type Session,
 } from '@/lib/sessions'
@@ -74,17 +73,17 @@ export function HostWaitingRoom() {
     if (access.status !== 'ok' || !sessionId) return
 
     let cancelled = false
-    listParticipants(sessionId).then((rows) => {
-      if (!cancelled) setParticipants(rows)
-    })
-
-    const unsubscribe = subscribeToParticipants(sessionId, (p) => {
-      setParticipants((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))
-    })
+    const refresh = () => {
+      listParticipants(sessionId).then((rows) => {
+        if (!cancelled) setParticipants(rows)
+      })
+    }
+    refresh()
+    const interval = setInterval(refresh, 2000)
 
     return () => {
       cancelled = true
-      unsubscribe()
+      clearInterval(interval)
     }
   }, [access.status, sessionId])
 

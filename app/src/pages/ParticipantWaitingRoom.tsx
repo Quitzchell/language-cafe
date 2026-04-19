@@ -6,8 +6,6 @@ import { useSession } from '@/contexts/SessionContext'
 import {
   fetchSessionById,
   listParticipants,
-  subscribeToParticipants,
-  subscribeToSessionEvents,
   type Participant,
 } from '@/lib/sessions'
 
@@ -25,26 +23,22 @@ export function ParticipantWaitingRoom() {
     if (!active) return
 
     let cancelled = false
-    listParticipants(active).then((rows) => {
-      if (!cancelled) setParticipants(rows)
-    })
-    fetchSessionById(active).then((session) => {
-      if (!cancelled && session?.status === 'ended') setEnded(true)
-    })
-
-    const unsubParticipants = subscribeToParticipants(active, (p) => {
-      setParticipants((prev) => (prev.some((x) => x.id === p.id) ? prev : [...prev, p]))
-    })
-
-    const unsubEvents = subscribeToSessionEvents(active, (event) => {
-      if (event.type === 'session_ended') setEnded(true)
-      if (event.type === 'session_started') navigate(`/join/${active}/play`)
-    })
+    const refresh = () => {
+      listParticipants(active).then((rows) => {
+        if (!cancelled) setParticipants(rows)
+      })
+      fetchSessionById(active).then((session) => {
+        if (cancelled || !session) return
+        if (session.status === 'ended') setEnded(true)
+        else if (session.status === 'active') navigate(`/join/${active}/play`)
+      })
+    }
+    refresh()
+    const interval = setInterval(refresh, 2000)
 
     return () => {
       cancelled = true
-      unsubParticipants()
-      unsubEvents()
+      clearInterval(interval)
     }
   }, [active, navigate])
 
