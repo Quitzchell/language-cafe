@@ -48,7 +48,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE session_events;
 | `type`           | payload (example)                                    | Notes |
 | ---------------- | ---------------------------------------------------- | ----- |
 | `session_started` | `{}`                                                 | emitted when host presses "Start sessie" |
-| `card_drawn`      | `{ "card_id": "<uuid>", "target_participant_id": "<uuid>" }` | `turn_number` set; the `card_id` → prior history query answers "which cards has this participant already seen?" |
+| `card_drawn`      | `{ "card_id": "<uuid>", "target_participant_id": "<uuid>", "practice_language": "<lang>", "native_language": "<lang>" }` | `turn_number` set; `practice_language`/`native_language` are resolved server-side so the event is self-contained for replay. The `card_id` → prior history query answers "which cards has this participant already seen?" |
 | `card_skipped`    | `{ "card_id": "<uuid>" }`                            | same `turn_number` as the draw it replaces |
 | `turn_passed`     | `{ "next_participant_id": "<uuid>" }`                | increments `turn_number` for the cycle |
 | `session_ended`   | `{ "reason": "host" \| "inactivity" }`               | participants use this to route to the "Sessie beëindigd" screen |

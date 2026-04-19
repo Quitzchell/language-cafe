@@ -17,15 +17,33 @@ export type Session = {
   ended_at: string | null
 }
 
-export type SessionEvent = {
+type BaseSessionEvent = {
   id: string
   session_id: string
-  type: string
-  payload: Record<string, unknown>
   actor_participant_id: string | null
   turn_number: number | null
   created_at: string
 }
+
+export type CardDrawnPayload = {
+  card_id: string
+  target_participant_id: string
+  practice_language: Language
+  native_language: Language
+}
+
+export type SessionEvent =
+  | (BaseSessionEvent & { type: 'session_started'; payload: Record<string, never> })
+  | (BaseSessionEvent & { type: 'card_drawn'; payload: CardDrawnPayload })
+  | (BaseSessionEvent & {
+      type: 'session_ended'
+      payload: { reason: 'host' | 'inactivity' }
+    })
+  | (BaseSessionEvent & { type: 'card_skipped'; payload: { card_id: string } })
+  | (BaseSessionEvent & {
+      type: 'turn_passed'
+      payload: { next_participant_id: string }
+    })
 
 export type Participant = {
   id: string
@@ -103,6 +121,96 @@ export async function endSession(
     p_actor_participant_id: actorParticipantId,
   })
   if (error) throw new Error(error.message)
+}
+
+export async function startSession(
+  sessionId: string,
+  actorParticipantId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('start_session', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function drawCard(
+  sessionId: string,
+  actorParticipantId: string,
+  targetParticipantId: string,
+): Promise<string> {
+  const { data, error } = await supabase.rpc('draw_card', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+    p_target_participant_id: targetParticipantId,
+  })
+  if (error) throw new Error(error.message)
+  return data as string
+}
+
+export async function skipCard(
+  sessionId: string,
+  actorParticipantId: string,
+): Promise<string> {
+  const { data, error } = await supabase.rpc('skip_card', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+  })
+  if (error) throw new Error(error.message)
+  return data as string
+}
+
+export async function passTurn(
+  sessionId: string,
+  actorParticipantId: string,
+  nextParticipantId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('pass_turn', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+    p_next_participant_id: nextParticipantId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function fetchCurrentDealer(sessionId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('session_events')
+    .select('payload')
+    .eq('session_id', sessionId)
+    .eq('type', 'turn_passed')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  if (!data) return null
+  const payload = data.payload as { next_participant_id?: string } | null
+  return payload?.next_participant_id ?? null
+}
+
+export async function fetchCardWithTranslations(
+  cardId: string,
+  practiceLanguage: Language,
+  nativeLanguage: Language,
+): Promise<{ practice: string; native: string }> {
+  const { data, error } = await supabase
+    .from('card_translations')
+    .select('language, translation')
+    .eq('card_id', cardId)
+    .in('language', [practiceLanguage, nativeLanguage])
+
+  if (error) throw new Error(error.message)
+
+  const byLang = new Map<string, string>(
+    (data ?? []).map((row) => [row.language as string, row.translation as string]),
+  )
+  const practice = byLang.get(practiceLanguage)
+  const native = byLang.get(nativeLanguage)
+  if (!practice || !native) {
+    throw new Error('Missing translation for card')
+  }
+  return { practice, native }
 }
 
 export function subscribeToSessionEvents(

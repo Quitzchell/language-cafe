@@ -38,6 +38,7 @@ export function ParticipantWaitingRoom() {
 
     const unsubEvents = subscribeToSessionEvents(active, (event) => {
       if (event.type === 'session_ended') setEnded(true)
+      if (event.type === 'session_started') navigate(`/join/${active}/play`)
     })
 
     return () => {
@@ -45,7 +46,7 @@ export function ParticipantWaitingRoom() {
       unsubParticipants()
       unsubEvents()
     }
-  }, [active])
+  }, [active, navigate])
 
   if (!active || !sessionTitle) {
     return <Navigate to={`/join/${sessionIdParam ?? ''}`} replace />

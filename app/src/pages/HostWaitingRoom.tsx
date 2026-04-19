@@ -11,6 +11,7 @@ import {
   fetchSessionById,
   isHostOfSession,
   listParticipants,
+  startSession,
   subscribeToParticipants,
   type Participant,
   type Session,
@@ -31,6 +32,7 @@ export function HostWaitingRoom() {
   const [participants, setParticipants] = useState<Participant[]>([])
   const [copied, setCopied] = useState(false)
   const endAction = useAsync(endSession)
+  const startAction = useAsync(startSession)
 
   useEffect(() => {
     if (!sessionId || !participantId) return
@@ -145,6 +147,12 @@ export function HostWaitingRoom() {
     if (result !== null) navigate('/')
   }
 
+  async function handleStart() {
+    if (!participantId) return
+    const result = await startAction.run(session.id, participantId)
+    if (result !== null) navigate(`/session/${session.id}/play`)
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
       <h1 className="text-3xl font-semibold">{session.title}</h1>
@@ -182,11 +190,15 @@ export function HostWaitingRoom() {
 
       <Button
         size="lg"
-        disabled={!canStart}
-        onClick={() => navigate(`/session/${session.id}/play`)}
+        disabled={!canStart || startAction.loading}
+        onClick={handleStart}
       >
-        Start sessie
+        {startAction.loading ? 'Starten…' : 'Start sessie'}
       </Button>
+
+      {startAction.error && (
+        <p className="text-sm text-destructive">{friendlyMessage(startAction.error)}</p>
+      )}
 
       <Button
         size="sm"

@@ -3,10 +3,12 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { RequireNativeLanguage } from '@/components/RequireNativeLanguage'
 import { RequireTargetLanguage } from '@/components/RequireTargetLanguage'
 import { SessionProvider } from '@/contexts/SessionContext'
+import { HostPlay } from '@/pages/HostPlay'
 import { HostWaitingRoom } from '@/pages/HostWaitingRoom'
 import { ModeSelect } from '@/pages/ModeSelect'
 import { NativeLanguageSelect } from '@/pages/NativeLanguageSelect'
 import { ParticipantJoin } from '@/pages/ParticipantJoin'
+import { ParticipantPlay } from '@/pages/ParticipantPlay'
 import { ParticipantWaitingRoom } from '@/pages/ParticipantWaitingRoom'
 import { SoloPlayStub } from '@/pages/SoloPlayStub'
 import { TargetLanguageSelect } from '@/pages/TargetLanguageSelect'
@@ -18,11 +20,9 @@ function App() {
         <Routes>
           <Route path="/join/:sessionId" element={<ParticipantJoin />} />
           <Route path="/join/:sessionId/waiting" element={<ParticipantWaitingRoom />} />
+          <Route path="/join/:sessionId/play" element={<ParticipantPlay />} />
           <Route path="/session/:sessionId" element={<HostWaitingRoom />} />
-          <Route
-            path="/session/:sessionId/play"
-            element={<div className="min-h-screen flex items-center justify-center">Gameplay coming in LC-7</div>}
-          />
+          <Route path="/session/:sessionId/play" element={<HostPlay />} />
           <Route path="/" element={<NativeLanguageSelect />} />
           <Route element={<RequireNativeLanguage />}>
             <Route path="/target" element={<TargetLanguageSelect />} />

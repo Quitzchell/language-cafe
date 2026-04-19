@@ -20,6 +20,7 @@ vi.mock('@/lib/sessions', () => {
     subscribeToParticipants: vi.fn(() => () => {}),
     subscribeToSessionEvents: vi.fn(() => () => {}),
     endSession: vi.fn(),
+    startSession: vi.fn(),
     NameTakenError,
   }
 })
@@ -29,6 +30,7 @@ import {
   fetchSessionById,
   isHostOfSession,
   listParticipants,
+  startSession,
   subscribeToParticipants,
 } from '@/lib/sessions'
 
@@ -38,7 +40,7 @@ const HOST_PARTICIPANT_ID = 'host-1'
 const persistedAsHost = {
   nativeLanguage: 'Dutch' as const,
   targetLanguage: 'Japanese' as const,
-  proficiencyLevel: 'B1' as const,
+  proficiencyLevels: ['B1'],
   mode: 'multiplayer' as const,
   sessionId: SESSION_ID,
   sessionTitle: 'Test session',
@@ -49,6 +51,7 @@ function renderHost() {
   return renderWithProviders(
     <Routes>
       <Route path="/session/:sessionId" element={<HostWaitingRoom />} />
+      <Route path="/session/:sessionId/play" element={<div>play route</div>} />
       <Route path="/" element={<div>home route</div>} />
     </Routes>,
     {
@@ -67,6 +70,7 @@ describe('HostWaitingRoom', () => {
     vi.mocked(isHostOfSession).mockReset()
     vi.mocked(listParticipants).mockReset()
     vi.mocked(endSession).mockReset()
+    vi.mocked(startSession).mockReset()
     vi.mocked(subscribeToParticipants).mockImplementation((_id, cb) => {
       participantCallback = cb
       return () => {}
@@ -121,6 +125,24 @@ describe('HostWaitingRoom', () => {
       await screen.findByRole('heading', { name: 'Sessie is beëindigd' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Terug naar start' })).toBeInTheDocument()
+  })
+
+  it('calls startSession and navigates to play when the host clicks Start sessie', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession())
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+    ])
+    vi.mocked(startSession).mockResolvedValue(undefined)
+
+    const user = userEvent.setup()
+    renderHost()
+
+    await user.click(await screen.findByRole('button', { name: 'Start sessie' }))
+
+    expect(vi.mocked(startSession)).toHaveBeenCalledWith(SESSION_ID, HOST_PARTICIPANT_ID)
+    expect(await screen.findByText('play route')).toBeInTheDocument()
   })
 
   it('rejects visitors who are not the host of the session', async () => {
