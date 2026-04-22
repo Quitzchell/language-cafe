@@ -524,4 +524,127 @@ describe('HostPlay', () => {
     expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
   })
 
+  it('hides the participant picker once a card is drawn', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+      makeParticipant({ id: 'guest-2', display_name: 'Lena', is_host: false }),
+    ])
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
+      practice: '週末は何をするのが好きですか？',
+      native: 'Wat doe je graag in het weekend?',
+    })
+
+    renderHostPlay()
+    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+
+    act(() => {
+      eventCallback?.(
+        makeCardDrawnEvent({
+          card_id: 'card-1',
+          target_participant_id: 'guest-1',
+          practice_language: 'Japanese',
+          native_language: 'Dutch',
+        }),
+      )
+    })
+
+    await screen.findByText('週末は何をするのが好きですか？')
+
+    expect(
+      screen.queryByRole('heading', { name: 'Kies een deelnemer' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Yuki/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Lena/ })).not.toBeInTheDocument()
+  })
+
+  it('reveals the picker again after turn_passed clears the card back to the host', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+      makeParticipant({ id: 'guest-2', display_name: 'Lena', is_host: false }),
+    ])
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
+      practice: '週末は何をするのが好きですか？',
+      native: 'Wat doe je graag in het weekend?',
+    })
+    vi.mocked(computeAskedThisRound).mockReturnValue(new Set(['guest-1']))
+
+    renderHostPlay()
+    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+
+    act(() => {
+      eventCallback?.(
+        makeCardDrawnEvent({
+          card_id: 'card-1',
+          target_participant_id: 'guest-1',
+          practice_language: 'Japanese',
+          native_language: 'Dutch',
+        }),
+      )
+    })
+    await screen.findByText('週末は何をするのが好きですか？')
+
+    act(() => {
+      eventCallback?.(
+        makeTurnPassedEvent({ next_participant_id: HOST_PARTICIPANT_ID }),
+      )
+    })
+
+    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+    expect(screen.queryByRole('button', { name: /Yuki/ })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Lena/ })).toBeInTheDocument()
+    expect(screen.queryByText('週末は何をするのが好きですか？')).not.toBeInTheDocument()
+  })
+
+  it('keeps the picker hidden across a skip (new card_drawn for same target)', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+    ])
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
+      practice: '週末は何をするのが好きですか？',
+      native: 'Wat doe je graag in het weekend?',
+    })
+
+    renderHostPlay()
+    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+
+    act(() => {
+      eventCallback?.(
+        makeCardDrawnEvent({
+          card_id: 'card-1',
+          target_participant_id: 'guest-1',
+          practice_language: 'Japanese',
+          native_language: 'Dutch',
+        }),
+      )
+    })
+    await screen.findByText('週末は何をするのが好きですか？')
+
+    act(() => {
+      eventCallback?.(
+        makeCardDrawnEvent(
+          {
+            card_id: 'card-2',
+            target_participant_id: 'guest-1',
+            practice_language: 'Japanese',
+            native_language: 'Dutch',
+          },
+          { id: 'event-skip-1' },
+        ),
+      )
+    })
+
+    expect(
+      screen.queryByRole('heading', { name: 'Kies een deelnemer' }),
+    ).not.toBeInTheDocument()
+  })
+
 })

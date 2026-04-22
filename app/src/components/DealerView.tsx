@@ -41,57 +41,59 @@ export function DealerView({
 
   return (
     <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
-      {card && card.text && targetName && (
-        <div className="flex flex-col items-center gap-4 w-full">
-          <CardDisplay
-            practice={card.text.practice}
-            native={card.text.native}
-            targetName={targetName}
-          />
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={loading.skip}
-              onClick={onSkip}
-            >
-              Overslaan
-            </Button>
-            <Button
-              size="sm"
-              disabled={loading.pass}
-              onClick={onPass}
-            >
-              Beurt doorgeven
-            </Button>
+      {card ? (
+        card.text && targetName && (
+          <div className="flex flex-col items-center gap-4 w-full">
+            <CardDisplay
+              practice={card.text.practice}
+              native={card.text.native}
+              targetName={targetName}
+            />
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={loading.skip}
+                onClick={onSkip}
+              >
+                Overslaan
+              </Button>
+              <Button
+                size="sm"
+                disabled={loading.pass}
+                onClick={onPass}
+              >
+                Beurt doorgeven
+              </Button>
+            </div>
           </div>
+        )
+      ) : (
+        <div className="flex flex-col gap-3 w-full max-w-md">
+          <h2 className="text-lg font-medium">Kies een deelnemer</h2>
+          {pickables.length === 0 ? (
+            <p className="text-sm text-muted-foreground italic">
+              Nog geen deelnemers in de sessie.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {pickables.map((p) => (
+                <li key={p.id}>
+                  <Button
+                    className="w-full justify-between"
+                    variant="outline"
+                    disabled={loading.pick}
+                    onClick={() => onPick(p.id)}
+                  >
+                    <span>{p.display_name}</span>
+                    <span className="text-xs text-muted-foreground">{p.proficiency_levels.join(', ')}</span>
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
-
-      <div className="flex flex-col gap-3 w-full max-w-md">
-        <h2 className="text-lg font-medium">Kies een deelnemer</h2>
-        {pickables.length === 0 ? (
-          <p className="text-sm text-muted-foreground italic">
-            Nog geen deelnemers in de sessie.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-2">
-            {pickables.map((p) => (
-              <li key={p.id}>
-                <Button
-                  className="w-full justify-between"
-                  variant="outline"
-                  disabled={loading.pick}
-                  onClick={() => onPick(p.id)}
-                >
-                  <span>{p.display_name}</span>
-                  <span className="text-xs text-muted-foreground">{p.proficiency_levels.join(', ')}</span>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
 
       {errors.pick && (
         <p className="text-sm text-destructive">{friendlyMessage(errors.pick)}</p>

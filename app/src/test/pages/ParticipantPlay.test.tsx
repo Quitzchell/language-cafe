@@ -220,6 +220,42 @@ describe('ParticipantPlay', () => {
     )
   })
 
+  it('hides the picker for a participant-dealer once a card is drawn', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: 'host-1', display_name: 'Host', is_host: true }),
+      makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
+      makeParticipant({ id: 'guest-2', display_name: 'Lena' }),
+    ])
+    vi.mocked(fetchCurrentDealer).mockResolvedValue(PARTICIPANT_ID)
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
+      practice: '週末は何をするのが好きですか？',
+      native: 'Wat doe je graag in het weekend?',
+    })
+
+    renderParticipantPlay()
+    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+
+    act(() => {
+      eventCallback?.(
+        makeCardDrawnEvent({
+          card_id: 'card-1',
+          target_participant_id: 'guest-2',
+          practice_language: 'Japanese',
+          native_language: 'Dutch',
+        }),
+      )
+    })
+
+    await screen.findByText('週末は何をするのが好きですか？')
+
+    expect(
+      screen.queryByRole('heading', { name: 'Kies een deelnemer' }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Host/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Lena/ })).not.toBeInTheDocument()
+  })
+
   it('restores dealer = me from fetchCurrentDealer on mount', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
     vi.mocked(listParticipants).mockResolvedValue([
