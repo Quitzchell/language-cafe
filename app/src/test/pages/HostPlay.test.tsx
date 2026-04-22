@@ -110,9 +110,6 @@ describe('HostPlay', () => {
       makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
       makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
     ])
-    vi.mocked(drawCard).mockResolvedValue(
-      makeCardDrawnEvent({ card_id: 'card-1', target_participant_id: 'guest-1' }),
-    )
 
     const user = userEvent.setup()
     renderHostPlay()
@@ -244,12 +241,6 @@ describe('HostPlay', () => {
       practice: '週末は何をするのが好きですか？',
       native: 'Wat doe je graag in het weekend?',
     })
-    vi.mocked(skipCard).mockResolvedValue(
-      makeCardDrawnEvent(
-        { card_id: 'card-2', target_participant_id: 'guest-1' },
-        { id: 'event-skip-1' },
-      ),
-    )
 
     const user = userEvent.setup()
     renderHostPlay()
@@ -334,9 +325,6 @@ describe('HostPlay', () => {
       practice: '週末は何をするのが好きですか？',
       native: 'Wat doe je graag in het weekend?',
     })
-    vi.mocked(passTurn).mockResolvedValue(
-      makeTurnPassedEvent({ next_participant_id: 'guest-1' }),
-    )
 
     const user = userEvent.setup()
     renderHostPlay()

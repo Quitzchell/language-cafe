@@ -181,9 +181,6 @@ describe('ParticipantPlay', () => {
       practice: '週末は何をするのが好きですか？',
       native: 'Wat doe je graag in het weekend?',
     })
-    vi.mocked(drawCard).mockResolvedValue(
-      makeCardDrawnEvent({ card_id: 'card-2', target_participant_id: 'guest-2' }),
-    )
 
     const user = userEvent.setup()
     renderParticipantPlay()
