@@ -34,6 +34,7 @@ vi.mock('@/lib/sessions', () => {
     fetchCurrentDealer: vi.fn(),
     fetchCardWithTranslations: vi.fn(),
     listCardDrawnEvents: vi.fn(() => Promise.resolve([])),
+    hasTurnPassedAfter: vi.fn(() => Promise.resolve(false)),
     computeAskedThisRound: vi.fn(() => new Set<string>()),
     NameTakenError,
   }
@@ -45,7 +46,9 @@ import {
   fetchCardWithTranslations,
   fetchCurrentDealer,
   fetchSessionById,
+  hasTurnPassedAfter,
   isHostOfSession,
+  listCardDrawnEvents,
   listParticipants,
   passTurn,
   skipCard,
@@ -95,6 +98,10 @@ describe('HostPlay', () => {
     vi.mocked(fetchCurrentDealer).mockResolvedValue(null)
     vi.mocked(fetchCardWithTranslations).mockReset()
     vi.mocked(fetchCardWithTranslations).mockResolvedValue({ practice: '', native: '' })
+    vi.mocked(listCardDrawnEvents).mockReset()
+    vi.mocked(listCardDrawnEvents).mockResolvedValue([])
+    vi.mocked(hasTurnPassedAfter).mockReset()
+    vi.mocked(hasTurnPassedAfter).mockResolvedValue(false)
     vi.mocked(subscribeToParticipants).mockImplementation(() => () => {})
     vi.mocked(subscribeToSessionEvents).mockImplementation((_id, cb) => {
       eventCallback = cb
@@ -442,6 +449,64 @@ describe('HostPlay', () => {
     expect(
       await screen.findByText('Wachten op Yuki…'),
     ).toBeInTheDocument()
+  })
+
+  it('restores the dealer card on mount when no turn_passed followed the last card_drawn', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+    ])
+    vi.mocked(listCardDrawnEvents).mockResolvedValue([
+      makeCardDrawnEvent({
+        card_id: 'card-1',
+        target_participant_id: 'guest-1',
+        practice_language: 'Japanese',
+        native_language: 'Dutch',
+      }),
+    ])
+    vi.mocked(hasTurnPassedAfter).mockResolvedValue(false)
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
+      practice: '週末は何をするのが好きですか？',
+      native: 'Wat doe je graag in het weekend?',
+    })
+
+    renderHostPlay()
+
+    expect(await screen.findByText('Voor Yuki')).toBeInTheDocument()
+    expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Overslaan/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Beurt doorgeven/i })).toBeInTheDocument()
+    expect(vi.mocked(fetchCardWithTranslations)).toHaveBeenCalledWith(
+      'card-1',
+      'Japanese',
+      'Dutch',
+    )
+  })
+
+  it('does not restore the card when a turn_passed arrived after the last card_drawn', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+    ])
+    vi.mocked(listCardDrawnEvents).mockResolvedValue([
+      makeCardDrawnEvent({
+        card_id: 'card-1',
+        target_participant_id: 'guest-1',
+        practice_language: 'Japanese',
+        native_language: 'Dutch',
+      }),
+    ])
+    vi.mocked(hasTurnPassedAfter).mockResolvedValue(true)
+
+    renderHostPlay()
+
+    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+    expect(screen.queryByText('Voor Yuki')).not.toBeInTheDocument()
+    expect(vi.mocked(fetchCardWithTranslations)).not.toHaveBeenCalled()
   })
 
   it('shows the blind message when the host is target of the current card', async () => {

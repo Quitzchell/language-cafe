@@ -198,6 +198,23 @@ export async function fetchCurrentDealer(sessionId: string): Promise<string | nu
   return payload?.next_participant_id ?? null
 }
 
+export async function hasTurnPassedAfter(
+  sessionId: string,
+  createdAt: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('session_events')
+    .select('id')
+    .eq('session_id', sessionId)
+    .eq('type', 'turn_passed')
+    .gt('created_at', createdAt)
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return !!data
+}
+
 export async function listCardDrawnEvents(sessionId: string): Promise<CardDrawnEvent[]> {
   const { data, error } = await supabase
     .from('session_events')

@@ -33,6 +33,7 @@ vi.mock('@/lib/sessions', () => {
     fetchCurrentDealer: vi.fn(),
     fetchCardWithTranslations: vi.fn(),
     listCardDrawnEvents: vi.fn(() => Promise.resolve([])),
+    hasTurnPassedAfter: vi.fn(() => Promise.resolve(false)),
     computeAskedThisRound: vi.fn(() => new Set<string>()),
     NameTakenError,
   }
@@ -43,6 +44,8 @@ import {
   fetchCardWithTranslations,
   fetchCurrentDealer,
   fetchSessionById,
+  hasTurnPassedAfter,
+  listCardDrawnEvents,
   listParticipants,
   passTurn,
   subscribeToSessionEvents,
@@ -88,6 +91,10 @@ describe('ParticipantPlay', () => {
     vi.mocked(fetchCurrentDealer).mockReset()
     vi.mocked(fetchCurrentDealer).mockResolvedValue(null)
     vi.mocked(fetchCardWithTranslations).mockResolvedValue({ practice: '', native: '' })
+    vi.mocked(listCardDrawnEvents).mockReset()
+    vi.mocked(listCardDrawnEvents).mockResolvedValue([])
+    vi.mocked(hasTurnPassedAfter).mockReset()
+    vi.mocked(hasTurnPassedAfter).mockResolvedValue(false)
     vi.mocked(subscribeToSessionEvents).mockImplementation((_id, cb) => {
       eventCallback = cb
       return () => {}
@@ -266,6 +273,34 @@ describe('ParticipantPlay', () => {
     expect(
       await screen.findByRole('heading', { name: 'Kies een deelnemer' }),
     ).toBeInTheDocument()
+  })
+
+  it('restores the bystander card on mount from session_events history', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: 'host-1', display_name: 'Host', is_host: true }),
+      makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
+      makeParticipant({ id: 'guest-2', display_name: 'Lena' }),
+    ])
+    vi.mocked(listCardDrawnEvents).mockResolvedValue([
+      makeCardDrawnEvent({
+        card_id: 'card-1',
+        target_participant_id: 'guest-2',
+        practice_language: 'Japanese',
+        native_language: 'Dutch',
+      }),
+    ])
+    vi.mocked(hasTurnPassedAfter).mockResolvedValue(false)
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
+      practice: '週末は何をするのが好きですか？',
+      native: 'Wat doe je graag in het weekend?',
+    })
+
+    renderParticipantPlay()
+
+    expect(await screen.findByText('Voor Lena')).toBeInTheDocument()
+    expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
+    expect(screen.queryByText('Wachten op de dealer…')).not.toBeInTheDocument()
   })
 
   it('flips to the ended screen when session_ended is broadcast', async () => {

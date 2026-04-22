@@ -13,6 +13,7 @@ import {
   fetchCardWithTranslations,
   fetchCurrentDealer,
   fetchSessionById,
+  hasTurnPassedAfter,
   listCardDrawnEvents,
   listParticipants,
   subscribeToParticipants,
@@ -128,9 +129,31 @@ export function SessionLiveProvider({
       })
     })
 
-    listCardDrawnEvents(sessionId).then((events) => {
+    listCardDrawnEvents(sessionId).then(async (events) => {
       if (cancelledRef.current) return
       setCardDrawnHistory(events)
+      const last = events[events.length - 1]
+      if (!last) return
+      if (await hasTurnPassedAfter(sessionId, last.created_at)) return
+      if (cancelledRef.current) return
+      const payload = last.payload
+      setCard((prev) => prev ?? { payload, text: null })
+      fetchCardWithTranslations(
+        payload.card_id,
+        payload.practice_language,
+        payload.native_language,
+      )
+        .then((text) => {
+          if (cancelledRef.current) return
+          setCard((prev) =>
+            prev && prev.payload.card_id === payload.card_id && !prev.text
+              ? { payload, text }
+              : prev,
+          )
+        })
+        .catch(() => {
+          // Leave skeleton; surface silently — matches applyEvent.
+        })
     })
 
     return () => {
