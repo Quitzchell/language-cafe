@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { matchesSessionLanguages, toCEFRLevels } from '@/lib/languages'
+import {
+  matchesSessionLanguages,
+  requiresRomanization,
+  toCEFRLevels,
+} from '@/lib/languages'
 
 describe('matchesSessionLanguages', () => {
   it('accepts a native matching the host native language', () => {
@@ -38,5 +42,15 @@ describe('toCEFRLevels', () => {
   it('passes CEFR levels through for Dutch', () => {
     expect(toCEFRLevels('Dutch', ['A2'])).toEqual(['A2'])
     expect(toCEFRLevels('Dutch', ['A2', 'B1'])).toEqual(['A2', 'B1'])
+  })
+})
+
+describe('requiresRomanization', () => {
+  it('returns false for Latin-script languages', () => {
+    expect(requiresRomanization('Dutch')).toBe(false)
+  })
+
+  it('returns true for Japanese', () => {
+    expect(requiresRomanization('Japanese')).toBe(true)
   })
 })

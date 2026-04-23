@@ -257,24 +257,34 @@ export async function fetchCardWithTranslations(
   cardId: string,
   practiceLanguage: Language,
   nativeLanguage: Language,
-): Promise<{ practice: string; native: string }> {
+): Promise<{ practice: string; native: string; romanization: string | null }> {
   const { data, error } = await supabase
     .from('card_translations')
-    .select('language, translation')
+    .select('language, translation, romanization')
     .eq('card_id', cardId)
     .in('language', [practiceLanguage, nativeLanguage])
 
   if (error) throw new Error(error.message)
 
-  const byLang = new Map<string, string>(
-    (data ?? []).map((row) => [row.language as string, row.translation as string]),
+  const byLang = new Map<string, { translation: string; romanization: string | null }>(
+    (data ?? []).map((row) => [
+      row.language as string,
+      {
+        translation: row.translation as string,
+        romanization: (row.romanization as string | null) ?? null,
+      },
+    ]),
   )
-  const practice = byLang.get(practiceLanguage)
-  const native = byLang.get(nativeLanguage)
-  if (!practice || !native) {
+  const practiceRow = byLang.get(practiceLanguage)
+  const nativeRow = byLang.get(nativeLanguage)
+  if (!practiceRow || !nativeRow) {
     throw new Error('Missing translation for card')
   }
-  return { practice, native }
+  return {
+    practice: practiceRow.translation,
+    native: nativeRow.translation,
+    romanization: practiceRow.romanization,
+  }
 }
 
 export function subscribeToSessionEvents(

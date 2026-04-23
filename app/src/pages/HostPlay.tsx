@@ -213,6 +213,7 @@ export function HostPlay() {
           <CardDisplay
             practice={card.text.practice}
             native={card.text.native}
+            romanization={card.text.romanization}
             targetName={targetName}
           />
         ) : null}

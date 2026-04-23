@@ -6,6 +6,7 @@ import type { SessionEvent } from '@/lib/sessions'
 import { ParticipantPlay } from '@/pages/ParticipantPlay'
 import {
   makeCardDrawnEvent,
+  makeCardText,
   makeParticipant,
   makeSession,
   makeSessionEndedEvent,
@@ -90,7 +91,7 @@ describe('ParticipantPlay', () => {
     vi.mocked(passTurn).mockReset()
     vi.mocked(fetchCurrentDealer).mockReset()
     vi.mocked(fetchCurrentDealer).mockResolvedValue(null)
-    vi.mocked(fetchCardWithTranslations).mockResolvedValue({ practice: '', native: '' })
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue(makeCardText())
     vi.mocked(listCardDrawnEvents).mockReset()
     vi.mocked(listCardDrawnEvents).mockResolvedValue([])
     vi.mocked(hasTurnPassedAfter).mockReset()
@@ -118,10 +119,12 @@ describe('ParticipantPlay', () => {
       makeParticipant({ id: 'host-1', display_name: 'Mitchell', is_host: true }),
       makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
     ])
-    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
-      practice: '週末は何をするのが好きですか？',
-      native: 'Wat doe je graag in het weekend?',
-    })
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue(
+      makeCardText({
+        practice: '週末は何をするのが好きですか？',
+        native: 'Wat doe je graag in het weekend?',
+      }),
+    )
 
     renderParticipantPlay()
     await screen.findByText('Wachten op de dealer…')
@@ -151,10 +154,12 @@ describe('ParticipantPlay', () => {
       makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
       makeParticipant({ id: 'guest-2', display_name: 'Lena' }),
     ])
-    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
-      practice: '週末は何をするのが好きですか？',
-      native: 'Wat doe je graag in het weekend?',
-    })
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue(
+      makeCardText({
+        practice: '週末は何をするのが好きですか？',
+        native: 'Wat doe je graag in het weekend?',
+      }),
+    )
 
     renderParticipantPlay()
     await screen.findByText('Wachten op de dealer…')
@@ -184,10 +189,12 @@ describe('ParticipantPlay', () => {
       makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
       makeParticipant({ id: 'guest-2', display_name: 'Lena' }),
     ])
-    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
-      practice: '週末は何をするのが好きですか？',
-      native: 'Wat doe je graag in het weekend?',
-    })
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue(
+      makeCardText({
+        practice: '週末は何をするのが好きですか？',
+        native: 'Wat doe je graag in het weekend?',
+      }),
+    )
 
     const user = userEvent.setup()
     renderParticipantPlay()
@@ -232,10 +239,12 @@ describe('ParticipantPlay', () => {
       makeParticipant({ id: 'guest-2', display_name: 'Lena' }),
     ])
     vi.mocked(fetchCurrentDealer).mockResolvedValue(PARTICIPANT_ID)
-    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
-      practice: '週末は何をするのが好きですか？',
-      native: 'Wat doe je graag in het weekend?',
-    })
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue(
+      makeCardText({
+        practice: '週末は何をするのが好きですか？',
+        native: 'Wat doe je graag in het weekend?',
+      }),
+    )
 
     renderParticipantPlay()
     await screen.findByRole('heading', { name: 'Kies een deelnemer' })
@@ -291,10 +300,12 @@ describe('ParticipantPlay', () => {
       }),
     ])
     vi.mocked(hasTurnPassedAfter).mockResolvedValue(false)
-    vi.mocked(fetchCardWithTranslations).mockResolvedValue({
-      practice: '週末は何をするのが好きですか？',
-      native: 'Wat doe je graag in het weekend?',
-    })
+    vi.mocked(fetchCardWithTranslations).mockResolvedValue(
+      makeCardText({
+        practice: '週末は何をするのが好きですか？',
+        native: 'Wat doe je graag in het weekend?',
+      }),
+    )
 
     renderParticipantPlay()
 

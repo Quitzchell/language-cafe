@@ -13,11 +13,17 @@ export const JLPT_TO_CEFR: Record<JLPTLevel, readonly CEFRLevel[]> = {
 }
 
 type LevelScheme = 'cefr' | 'jlpt'
+type Script = 'latin' | 'japanese'
 
 export const LANGUAGES = [
-  { code: 'Dutch', label: 'Nederlands', levelScheme: 'cefr' },
-  { code: 'Japanese', label: '日本語', levelScheme: 'jlpt' },
-] as const satisfies readonly { code: string; label: string; levelScheme: LevelScheme }[]
+  { code: 'Dutch', label: 'Nederlands', levelScheme: 'cefr', script: 'latin' },
+  { code: 'Japanese', label: '日本語', levelScheme: 'jlpt', script: 'japanese' },
+] as const satisfies readonly {
+  code: string
+  label: string
+  levelScheme: LevelScheme
+  script: Script
+}[]
 
 export type Language = (typeof LANGUAGES)[number]['code']
 
@@ -43,6 +49,10 @@ export function toCEFRLevels(
       : [level as CEFRLevel],
   )
   return CEFR_LEVELS.filter((c) => expanded.includes(c))
+}
+
+export function requiresRomanization(language: Language): boolean {
+  return LANGUAGES.find((l) => l.code === language)?.script !== 'latin'
 }
 
 export function matchesSessionLanguages(

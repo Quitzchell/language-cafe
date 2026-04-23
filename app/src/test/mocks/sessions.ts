@@ -6,6 +6,17 @@ import type {
   SessionEvent,
 } from '@/lib/sessions'
 
+type CardText = { practice: string; native: string; romanization: string | null }
+
+export function makeCardText(overrides: Partial<CardText> = {}): CardText {
+  return {
+    practice: '',
+    native: '',
+    romanization: null,
+    ...overrides,
+  }
+}
+
 export function makeSession(overrides: Partial<Session> = {}): Session {
   return {
     id: 'session-1',

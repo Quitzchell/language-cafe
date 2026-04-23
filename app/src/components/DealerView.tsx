@@ -7,7 +7,7 @@ import type { CardDrawnPayload, Participant } from '@/lib/sessions'
 
 export type DealerCardView = {
   payload: CardDrawnPayload
-  text: { practice: string; native: string } | null
+  text: { practice: string; native: string; romanization: string | null } | null
 }
 
 type DealerViewProps = {
@@ -51,6 +51,7 @@ export function DealerView({
             <CardDisplay
               practice={card.text.practice}
               native={card.text.native}
+              romanization={card.text.romanization}
               targetName={targetName}
             />
             <div className="flex gap-2">
