@@ -7,9 +7,11 @@ import { Button } from '@/components/ui/button'
 import { useSession } from '@/contexts/SessionContext'
 import { useSessionLive } from '@/contexts/SessionLive'
 import { useAsync } from '@/hooks/useAsync'
+import { friendlyMessage } from '@/lib/errors'
 import {
   computeAskedThisRound,
   drawCard,
+  endSession,
   isHostOfSession,
   passTurn,
   skipCard,
@@ -40,6 +42,7 @@ export function HostPlay() {
   const drawAction = useAsync(drawCard)
   const skipAction = useAsync(skipCard)
   const passAction = useAsync(passTurn)
+  const endAction = useAsync(endSession)
 
   useEffect(() => {
     if (!sessionId || !participantId) return
@@ -131,6 +134,29 @@ export function HostPlay() {
     await passAction.run(sessionId, participantId, card.payload.target_participant_id)
   }
 
+  async function handleEnd() {
+    if (!participantId || !sessionId) return
+    if (!window.confirm('Weet je zeker dat je de sessie wilt beëindigen?')) return
+    const result = await endAction.run(sessionId, 'host', participantId)
+    if (result !== null) navigate('/')
+  }
+
+  const endButton = (
+    <div className="flex flex-col items-center gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={endAction.loading}
+        onClick={handleEnd}
+      >
+        {endAction.loading ? 'Beëindigen…' : 'Beëindig sessie'}
+      </Button>
+      {endAction.error && (
+        <p className="text-sm text-destructive">{friendlyMessage(endAction.error)}</p>
+      )}
+    </div>
+  )
+
   const isDealer = currentDealerId === participantId
   const askedThisRound = computeAskedThisRound(cardDrawnHistory, participants.length)
   const isTarget = !!card && card.payload.target_participant_id === participantId
@@ -155,16 +181,20 @@ export function HostPlay() {
           skip: skipAction.error,
           pass: passAction.error,
         }}
+        footer={endButton}
       />
     )
   }
 
   if (isTarget) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 py-12">
-        <p className="text-xl font-medium text-center">
-          Iemand stelt jou een vraag — luister goed {/* todo: use the player their native language for this */}
-        </p>
+      <div className="min-h-screen flex flex-col px-4 py-12">
+        <div className="flex-1 flex flex-col items-center justify-center gap-4">
+          <p className="text-xl font-medium text-center">
+            Iemand stelt jou een vraag — luister goed {/* todo: use the player their native language for this */}
+          </p>
+        </div>
+        <div className="flex justify-center pt-8">{endButton}</div>
       </div>
     )
   }
@@ -177,15 +207,18 @@ export function HostPlay() {
     : null
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4 py-12">
-      {card && card.text && targetName ? (
-        <CardDisplay
-          practice={card.text.practice}
-          native={card.text.native}
-          targetName={targetName}
-        />
-      ) : null}
-      <p className="text-muted-foreground">Wachten op {dealerName}…</p> {/* todo: it is fine if this is just 'Wait for dealer' in the player their native language  */}
+    <div className="min-h-screen flex flex-col px-4 py-12">
+      <div className="flex-1 flex flex-col items-center justify-center gap-8">
+        {card && card.text && targetName ? (
+          <CardDisplay
+            practice={card.text.practice}
+            native={card.text.native}
+            targetName={targetName}
+          />
+        ) : null}
+        <p className="text-muted-foreground">Wachten op {dealerName}…</p> {/* todo: it is fine if this is just 'Wait for dealer' in the player their native language  */}
+      </div>
+      <div className="flex justify-center pt-8">{endButton}</div>
     </div>
   )
 }

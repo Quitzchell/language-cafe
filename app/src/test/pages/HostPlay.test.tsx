@@ -43,6 +43,7 @@ vi.mock('@/lib/sessions', () => {
 import {
   computeAskedThisRound,
   drawCard,
+  endSession,
   fetchCardWithTranslations,
   fetchCurrentDealer,
   fetchSessionById,
@@ -102,6 +103,7 @@ describe('HostPlay', () => {
     vi.mocked(listCardDrawnEvents).mockResolvedValue([])
     vi.mocked(hasTurnPassedAfter).mockReset()
     vi.mocked(hasTurnPassedAfter).mockResolvedValue(false)
+    vi.mocked(endSession).mockReset()
     vi.mocked(subscribeToParticipants).mockImplementation(() => () => {})
     vi.mocked(subscribeToSessionEvents).mockImplementation((_id, cb) => {
       eventCallback = cb
@@ -698,6 +700,69 @@ describe('HostPlay', () => {
     expect(
       screen.queryByRole('heading', { name: 'Kies een deelnemer' }),
     ).not.toBeInTheDocument()
+  })
+
+  it('ends the session and navigates home when the host confirms from the play screen', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+    ])
+    vi.mocked(endSession).mockResolvedValue(undefined)
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const user = userEvent.setup()
+    renderHostPlay()
+
+    await user.click(await screen.findByRole('button', { name: 'Beëindig sessie' }))
+
+    expect(vi.mocked(endSession)).toHaveBeenCalledWith(
+      SESSION_ID,
+      'host',
+      HOST_PARTICIPANT_ID,
+    )
+    expect(await screen.findByText('home route')).toBeInTheDocument()
+    confirmSpy.mockRestore()
+  })
+
+  it('does not end the session when the host cancels the confirm dialog', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+    ])
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const user = userEvent.setup()
+    renderHostPlay()
+
+    await user.click(await screen.findByRole('button', { name: 'Beëindig sessie' }))
+
+    expect(vi.mocked(endSession)).not.toHaveBeenCalled()
+    expect(screen.queryByText('home route')).not.toBeInTheDocument()
+    confirmSpy.mockRestore()
+  })
+
+  it('surfaces an end-session error via friendlyMessage', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Host', is_host: true }),
+      makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
+    ])
+    vi.mocked(endSession).mockRejectedValue(new Error('Session already ended'))
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const user = userEvent.setup()
+    renderHostPlay()
+
+    await user.click(await screen.findByRole('button', { name: 'Beëindig sessie' }))
+
+    expect(await screen.findByText('Session already ended')).toBeInTheDocument()
+    expect(screen.queryByText('home route')).not.toBeInTheDocument()
+    confirmSpy.mockRestore()
   })
 
 })

@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import { CardDisplay } from '@/components/CardDisplay'
 import { Button } from '@/components/ui/button'
 import { friendlyMessage } from '@/lib/errors'
@@ -18,6 +20,7 @@ type DealerViewProps = {
   onPass: () => void
   loading: { pick: boolean; skip: boolean; pass: boolean }
   errors: { pick: Error | null; skip: Error | null; pass: Error | null }
+  footer?: ReactNode
 }
 
 export function DealerView({
@@ -30,6 +33,7 @@ export function DealerView({
   onPass,
   loading,
   errors,
+  footer,
 }: DealerViewProps) {
   const pickables = participants.filter(
     (p) => p.id !== actorParticipantId && !askedParticipantIds.has(p.id),
@@ -104,6 +108,8 @@ export function DealerView({
       {errors.pass && (
         <p className="text-sm text-destructive">{friendlyMessage(errors.pass)}</p>
       )}
+
+      {footer && <div className="mt-auto pt-8">{footer}</div>}
     </div>
   )
 }
