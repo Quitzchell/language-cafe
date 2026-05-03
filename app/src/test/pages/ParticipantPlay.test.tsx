@@ -110,7 +110,7 @@ describe('ParticipantPlay', () => {
 
     renderParticipantPlay()
 
-    expect(await screen.findByText('Wachten op de dealer…')).toBeInTheDocument()
+    expect(await screen.findByText('Waiting for the dealer…')).toBeInTheDocument()
   })
 
   it('shows the blind message when a card_drawn event targets me', async () => {
@@ -127,7 +127,7 @@ describe('ParticipantPlay', () => {
     )
 
     renderParticipantPlay()
-    await screen.findByText('Wachten op de dealer…')
+    await screen.findByText('Waiting for the dealer…')
 
     act(() => {
       eventCallback?.(
@@ -162,7 +162,7 @@ describe('ParticipantPlay', () => {
     )
 
     renderParticipantPlay()
-    await screen.findByText('Wachten op de dealer…')
+    await screen.findByText('Waiting for the dealer…')
 
     act(() => {
       eventCallback?.(
@@ -198,7 +198,7 @@ describe('ParticipantPlay', () => {
 
     const user = userEvent.setup()
     renderParticipantPlay()
-    await screen.findByText('Wachten op de dealer…')
+    await screen.findByText('Waiting for the dealer…')
 
     act(() => {
       eventCallback?.(
@@ -311,7 +311,7 @@ describe('ParticipantPlay', () => {
 
     expect(await screen.findByText('Voor Lena')).toBeInTheDocument()
     expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
-    expect(screen.queryByText('Wachten op de dealer…')).not.toBeInTheDocument()
+    expect(screen.queryByText('Waiting for the dealer…')).not.toBeInTheDocument()
   })
 
   it('flips to the ended screen when session_ended is broadcast', async () => {
@@ -321,14 +321,14 @@ describe('ParticipantPlay', () => {
     ])
 
     renderParticipantPlay()
-    await screen.findByText('Wachten op de dealer…')
+    await screen.findByText('Waiting for the dealer…')
 
     act(() => {
       eventCallback?.(makeSessionEndedEvent())
     })
 
     expect(
-      await screen.findByRole('heading', { name: 'Sessie is beëindigd' }),
+      await screen.findByRole('heading', { name: 'Session ended' }),
     ).toBeInTheDocument()
   })
 })

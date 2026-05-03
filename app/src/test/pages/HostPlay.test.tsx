@@ -205,7 +205,7 @@ describe('HostPlay', () => {
     })
 
     expect(
-      await screen.findByRole('heading', { name: 'Sessie is beëindigd' }),
+      await screen.findByRole('heading', { name: 'Session ended' }),
     ).toBeInTheDocument()
   })
 
@@ -405,7 +405,7 @@ describe('HostPlay', () => {
     })
 
     expect(
-      await screen.findByText('Wachten op Yuki…'),
+      await screen.findByText('Waiting for Yuki…'),
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('heading', { name: 'Kies een deelnemer' }),
@@ -462,7 +462,7 @@ describe('HostPlay', () => {
     renderHostPlay()
 
     expect(
-      await screen.findByText('Wachten op Yuki…'),
+      await screen.findByText('Waiting for Yuki…'),
     ).toBeInTheDocument()
   })
 
@@ -542,7 +542,7 @@ describe('HostPlay', () => {
     )
 
     renderHostPlay()
-    await screen.findByText('Wachten op Yuki…')
+    await screen.findByText('Waiting for Yuki…')
 
     act(() => {
       eventCallback?.(
@@ -740,7 +740,7 @@ describe('HostPlay', () => {
     const user = userEvent.setup()
     renderHostPlay()
 
-    await user.click(await screen.findByRole('button', { name: 'Beëindig sessie' }))
+    await user.click(await screen.findByRole('button', { name: 'End session' }))
 
     expect(vi.mocked(endSession)).toHaveBeenCalledWith(
       SESSION_ID,
@@ -763,7 +763,7 @@ describe('HostPlay', () => {
     const user = userEvent.setup()
     renderHostPlay()
 
-    await user.click(await screen.findByRole('button', { name: 'Beëindig sessie' }))
+    await user.click(await screen.findByRole('button', { name: 'End session' }))
 
     expect(vi.mocked(endSession)).not.toHaveBeenCalled()
     expect(screen.queryByText('home route')).not.toBeInTheDocument()
@@ -783,7 +783,7 @@ describe('HostPlay', () => {
     const user = userEvent.setup()
     renderHostPlay()
 
-    await user.click(await screen.findByRole('button', { name: 'Beëindig sessie' }))
+    await user.click(await screen.findByRole('button', { name: 'End session' }))
 
     expect(await screen.findByText('Session already ended')).toBeInTheDocument()
     expect(screen.queryByText('home route')).not.toBeInTheDocument()

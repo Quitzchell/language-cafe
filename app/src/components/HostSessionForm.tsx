@@ -51,7 +51,7 @@ export function HostSessionForm({
         />
       </label>
       <label className="flex flex-col gap-2">
-        <span className="text-sm font-medium">Jouw naam</span>
+        <span className="text-sm font-medium">Your name</span>
         <input
           type="text"
           value={hostDisplayName}
@@ -62,7 +62,7 @@ export function HostSessionForm({
         />
       </label>
       <Button size="lg" disabled={!canSubmit} onClick={handleSubmit}>
-        {loading ? 'Creating…' : 'Doorgaan'}
+        {loading ? 'Creating…' : 'Continue'}
       </Button>
       {error && <p className="text-sm text-destructive">{friendlyMessage(error)}</p>}
     </div>

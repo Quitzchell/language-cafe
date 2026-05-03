@@ -59,9 +59,9 @@ export function ParticipantJoin() {
   if (context.session.status === 'ended') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
-        <h1 className="text-2xl font-semibold">Deze sessie is al beëindigd</h1>
+        <h1 className="text-2xl font-semibold">This session has already ended</h1>
         <p className="text-sm text-muted-foreground">
-          Vraag de host een nieuwe sessie te starten.
+          Ask the host to start a new session.
         </p>
       </div>
     )
@@ -143,7 +143,7 @@ export function ParticipantJoin() {
 
       {native && !nativeMatches && (
         <p className="text-sm text-destructive text-center max-w-xs">
-          Deze taal wordt nog niet ondersteund in deze sessie.
+          This language isn't supported in this session yet.
         </p>
       )}
 

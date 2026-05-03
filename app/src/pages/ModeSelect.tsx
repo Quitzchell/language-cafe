@@ -28,7 +28,7 @@ export function ModeSelect() {
           variant={hosting ? 'default' : 'outline'}
           onClick={() => setHosting(true)}
         >
-          Met anderen
+          With others
         </Button>
       </div>
 

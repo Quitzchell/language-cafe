@@ -96,9 +96,9 @@ export function HostPlay() {
   if (access === 'ended') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
-        <h1 className="text-2xl font-semibold">Sessie is beëindigd</h1>
+        <h1 className="text-2xl font-semibold">Session ended</h1>
         <Button size="sm" variant="outline" onClick={() => navigate('/')}>
-          Terug naar start
+          Back to start
         </Button>
       </div>
     )
@@ -136,7 +136,7 @@ export function HostPlay() {
 
   async function handleEnd() {
     if (!participantId || !sessionId) return
-    if (!window.confirm('Weet je zeker dat je de sessie wilt beëindigen?')) return
+    if (!window.confirm('Are you sure you want to end the session?')) return
     const result = await endAction.run(sessionId, 'host', participantId)
     if (result !== null) navigate('/')
   }
@@ -149,7 +149,7 @@ export function HostPlay() {
         disabled={endAction.loading}
         onClick={handleEnd}
       >
-        {endAction.loading ? 'Beëindigen…' : 'Beëindig sessie'}
+        {endAction.loading ? 'Ending…' : 'End session'}
       </Button>
       {endAction.error && (
         <p className="text-sm text-destructive">{friendlyMessage(endAction.error)}</p>
@@ -217,7 +217,7 @@ export function HostPlay() {
             targetName={targetName}
           />
         ) : null}
-        <p className="text-muted-foreground">Wachten op {dealerName}…</p> {/* todo: it is fine if this is just 'Wait for dealer' in the player their native language  */}
+        <p className="text-muted-foreground">Waiting for {dealerName}…</p> {/* todo: it is fine if this is just 'Wait for dealer' in the player their native language  */}
       </div>
       <div className="flex justify-center pt-8">{endButton}</div>
     </div>

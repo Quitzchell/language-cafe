@@ -54,10 +54,10 @@ describe('ModeSelect multiplayer flow', () => {
       },
     )
 
-    await user.click(screen.getByRole('button', { name: 'Met anderen' }))
+    await user.click(screen.getByRole('button', { name: 'With others' }))
     await user.type(screen.getByRole('textbox', { name: 'Session title' }), 'Tuesday café')
-    await user.type(screen.getByRole('textbox', { name: 'Jouw naam' }), 'Mitchell')
-    await user.click(screen.getByRole('button', { name: 'Doorgaan' }))
+    await user.type(screen.getByRole('textbox', { name: 'Your name' }), 'Mitchell')
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(vi.mocked(createHostedSession)).toHaveBeenCalledWith({
       title: 'Tuesday café',
@@ -69,7 +69,7 @@ describe('ModeSelect multiplayer flow', () => {
     expect(await screen.findByText('session route session-abc')).toBeInTheDocument()
   })
 
-  it('disables Doorgaan until both session title and host name are entered', async () => {
+  it('disables Continue until both session title and host name are entered', async () => {
     const user = userEvent.setup()
     renderWithProviders(
       <Routes>
@@ -85,14 +85,14 @@ describe('ModeSelect multiplayer flow', () => {
       },
     )
 
-    await user.click(screen.getByRole('button', { name: 'Met anderen' }))
-    const submit = screen.getByRole('button', { name: 'Doorgaan' })
+    await user.click(screen.getByRole('button', { name: 'With others' }))
+    const submit = screen.getByRole('button', { name: 'Continue' })
     expect(submit).toBeDisabled()
 
     await user.type(screen.getByRole('textbox', { name: 'Session title' }), 'Tuesday café')
     expect(submit).toBeDisabled()
 
-    await user.type(screen.getByRole('textbox', { name: 'Jouw naam' }), 'Mitchell')
+    await user.type(screen.getByRole('textbox', { name: 'Your name' }), 'Mitchell')
     expect(submit).toBeEnabled()
   })
 })

@@ -33,10 +33,10 @@ export function ParticipantPlay() {
   if (ended) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
-        <h1 className="text-2xl font-semibold">Sessie is beëindigd</h1>
-        <p className="text-sm text-muted-foreground">Bedankt voor het meedoen!</p>
+        <h1 className="text-2xl font-semibold">Session ended</h1>
+        <p className="text-sm text-muted-foreground">Thanks for joining!</p>
         <Button size="sm" variant="outline" onClick={() => navigate('/')}>
-          Terug naar start
+          Back to start
         </Button>
       </div>
     )
@@ -110,7 +110,7 @@ export function ParticipantPlay() {
           targetName={targetName}
         />
       ) : (
-        <p className="text-muted-foreground">Wachten op de dealer…</p>
+        <p className="text-muted-foreground">Waiting for the dealer…</p>
       )}
     </div>
   )

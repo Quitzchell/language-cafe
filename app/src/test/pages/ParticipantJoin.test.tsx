@@ -156,7 +156,7 @@ describe('ParticipantJoin guards', () => {
 
     await user.click(await screen.findByRole('button', { name: '日本語' }))
     expect(
-      screen.getByText('Deze taal wordt nog niet ondersteund in deze sessie.'),
+      screen.getByText("This language isn't supported in this session yet."),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Join session' })).toBeDisabled()
   })
@@ -188,7 +188,7 @@ describe('ParticipantJoin guards', () => {
     renderJoin()
 
     expect(
-      await screen.findByRole('heading', { name: 'Deze sessie is al beëindigd' }),
+      await screen.findByRole('heading', { name: 'This session has already ended' }),
     ).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Your name' })).not.toBeInTheDocument()
   })

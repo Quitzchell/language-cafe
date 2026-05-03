@@ -127,7 +127,7 @@ describe('ParticipantWaitingRoom', () => {
     })
 
     expect(
-      await screen.findByRole('heading', { name: 'Sessie is beëindigd' }),
+      await screen.findByRole('heading', { name: 'Session ended' }),
     ).toBeInTheDocument()
     expect(screen.queryByText('Yuki')).not.toBeInTheDocument()
   })
@@ -155,7 +155,7 @@ describe('ParticipantWaitingRoom', () => {
     renderWaitingRoom()
 
     expect(
-      await screen.findByRole('heading', { name: 'Sessie is beëindigd' }),
+      await screen.findByRole('heading', { name: 'Session ended' }),
     ).toBeInTheDocument()
   })
 })

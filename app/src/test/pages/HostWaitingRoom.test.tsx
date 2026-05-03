@@ -119,7 +119,7 @@ describe('HostWaitingRoom', () => {
     const user = userEvent.setup()
     renderHost()
 
-    await user.click(await screen.findByRole('button', { name: 'Beëindig sessie' }))
+    await user.click(await screen.findByRole('button', { name: 'End session' }))
 
     expect(vi.mocked(endSession)).toHaveBeenCalledWith(SESSION_ID, 'host', HOST_PARTICIPANT_ID)
     expect(await screen.findByText('home route')).toBeInTheDocument()
@@ -134,12 +134,12 @@ describe('HostWaitingRoom', () => {
     renderHost()
 
     expect(
-      await screen.findByRole('heading', { name: 'Sessie is beëindigd' }),
+      await screen.findByRole('heading', { name: 'Session ended' }),
     ).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Terug naar start' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Back to start' })).toBeInTheDocument()
   })
 
-  it('calls startSession and navigates to play when the host clicks Start sessie', async () => {
+  it('calls startSession and navigates to play when the host clicks Start session', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession())
     vi.mocked(isHostOfSession).mockResolvedValue(true)
     vi.mocked(listParticipants).mockResolvedValue([
@@ -151,7 +151,7 @@ describe('HostWaitingRoom', () => {
     const user = userEvent.setup()
     renderHost()
 
-    await user.click(await screen.findByRole('button', { name: 'Start sessie' }))
+    await user.click(await screen.findByRole('button', { name: 'Start session' }))
 
     expect(vi.mocked(startSession)).toHaveBeenCalledWith(SESSION_ID, HOST_PARTICIPANT_ID)
     expect(await screen.findByText('play route')).toBeInTheDocument()

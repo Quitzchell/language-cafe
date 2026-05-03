@@ -77,9 +77,9 @@ export function HostWaitingRoom() {
   if (access === 'ended') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
-        <h1 className="text-2xl font-semibold">Sessie is beëindigd</h1>
+        <h1 className="text-2xl font-semibold">Session ended</h1>
         <Button size="sm" variant="outline" onClick={() => navigate('/')}>
-          Terug naar start
+          Back to start
         </Button>
       </div>
     )
@@ -98,7 +98,7 @@ export function HostWaitingRoom() {
 
   async function handleEnd() {
     if (!participantId) return
-    if (!window.confirm('Weet je zeker dat je de sessie wilt beëindigen?')) return
+    if (!window.confirm('Are you sure you want to end the session?')) return
     const result = await endAction.run(activeSession.id, 'host', participantId)
     if (result !== null) navigate('/')
   }
@@ -149,7 +149,7 @@ export function HostWaitingRoom() {
         disabled={!canStart || startAction.loading}
         onClick={handleStart}
       >
-        {startAction.loading ? 'Starten…' : 'Start sessie'}
+        {startAction.loading ? 'Starting…' : 'Start session'}
       </Button>
 
       {startAction.error && (
@@ -162,7 +162,7 @@ export function HostWaitingRoom() {
         disabled={endAction.loading}
         onClick={handleEnd}
       >
-        {endAction.loading ? 'Beëindigen…' : 'Beëindig sessie'}
+        {endAction.loading ? 'Ending…' : 'End session'}
       </Button>
 
       {endAction.error && (

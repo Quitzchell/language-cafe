@@ -83,7 +83,7 @@ export function TargetLanguageSelect() {
         disabled={!target || selected.length === 0}
         onClick={handleContinue}
       >
-        Doorgaan
+        Continue
       </Button>
     </div>
   )

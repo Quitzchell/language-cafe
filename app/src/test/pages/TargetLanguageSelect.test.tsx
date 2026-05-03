@@ -40,12 +40,12 @@ describe('TargetLanguageSelect', () => {
     }
 
     await user.click(screen.getByRole('button', { name: 'N3' }))
-    await user.click(screen.getByRole('button', { name: 'Doorgaan' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
     expect(await screen.findByText('mode route')).toBeInTheDocument()
     expect(readPersistedLevels()).toEqual(['B1'])
   })
 
-  it('expands JLPT N1 to both C1 and C2 on Doorgaan', async () => {
+  it('expands JLPT N1 to both C1 and C2 on Continue', async () => {
     const user = userEvent.setup()
     renderWithProviders(
       <Routes>
@@ -60,7 +60,7 @@ describe('TargetLanguageSelect', () => {
 
     await user.click(screen.getByRole('button', { name: '日本語' }))
     await user.click(screen.getByRole('button', { name: 'N1' }))
-    await user.click(screen.getByRole('button', { name: 'Doorgaan' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(await screen.findByText('mode route')).toBeInTheDocument()
     expect(readPersistedLevels()).toEqual(['C1', 'C2'])
@@ -86,13 +86,13 @@ describe('TargetLanguageSelect', () => {
 
     await user.click(screen.getByRole('button', { name: 'A2' }))
     await user.click(screen.getByRole('button', { name: 'B1' }))
-    await user.click(screen.getByRole('button', { name: 'Doorgaan' }))
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(await screen.findByText('mode route')).toBeInTheDocument()
     expect(readPersistedLevels()).toEqual(['A2', 'B1'])
   })
 
-  it('disables Doorgaan until at least one level is selected', async () => {
+  it('disables Continue until at least one level is selected', async () => {
     const user = userEvent.setup()
     renderWithProviders(
       <Routes>
@@ -105,10 +105,10 @@ describe('TargetLanguageSelect', () => {
       },
     )
 
-    expect(screen.getByRole('button', { name: 'Doorgaan' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
     await user.click(screen.getByRole('button', { name: '日本語' }))
-    expect(screen.getByRole('button', { name: 'Doorgaan' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeDisabled()
     await user.click(screen.getByRole('button', { name: 'N4' }))
-    expect(screen.getByRole('button', { name: 'Doorgaan' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Continue' })).toBeEnabled()
   })
 })
