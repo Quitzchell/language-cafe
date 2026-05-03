@@ -7,6 +7,7 @@ import { useSession } from '@/contexts/SessionContext'
 import { useSessionLive } from '@/contexts/SessionLive'
 import { useAsync } from '@/hooks/useAsync'
 import { computeAskedThisRound, drawCard, passTurn, skipCard } from '@/lib/sessions'
+import { targetPromptText } from '@/lib/targetPrompt'
 
 export function ParticipantPlay() {
   const { sessionId: sessionIdParam } = useParams<{ sessionId: string }>()
@@ -60,6 +61,7 @@ export function ParticipantPlay() {
   const isDealer = currentDealerId === participantId
   const askedThisRound = computeAskedThisRound(cardDrawnHistory, participants.length)
   const isTarget = !!card && card.payload.target_participant_id === participantId
+  const myNativeLanguage = participants.find((p) => p.id === participantId)?.native_language
 
   if (isDealer) {
     return (
@@ -89,7 +91,9 @@ export function ParticipantPlay() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 py-12">
         <p className="text-xl font-medium text-center">
-          Iemand stelt jou een vraag — luister goed
+          {myNativeLanguage
+            ? targetPromptText(myNativeLanguage)
+            : 'Someone is asking you a question — listen carefully'}
         </p>
       </div>
     )

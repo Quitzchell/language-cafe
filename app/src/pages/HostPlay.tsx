@@ -16,6 +16,7 @@ import {
   passTurn,
   skipCard,
 } from '@/lib/sessions'
+import { targetPromptText } from '@/lib/targetPrompt'
 
 type AccessStatus =
   | 'loading'
@@ -160,6 +161,7 @@ export function HostPlay() {
   const isDealer = currentDealerId === participantId
   const askedThisRound = computeAskedThisRound(cardDrawnHistory, participants.length)
   const isTarget = !!card && card.payload.target_participant_id === participantId
+  const myNativeLanguage = participants.find((p) => p.id === participantId)?.native_language
 
   if (isDealer) {
     return (
@@ -191,7 +193,9 @@ export function HostPlay() {
       <div className="min-h-screen flex flex-col px-4 py-12">
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
           <p className="text-xl font-medium text-center">
-            Iemand stelt jou een vraag — luister goed {/* todo: use the player their native language for this */}
+            {myNativeLanguage
+              ? targetPromptText(myNativeLanguage)
+              : 'Someone is asking you a question — listen carefully'}
           </p>
         </div>
         <div className="flex justify-center pt-8">{endButton}</div>

@@ -117,7 +117,7 @@ describe('ParticipantPlay', () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
     vi.mocked(listParticipants).mockResolvedValue([
       makeParticipant({ id: 'host-1', display_name: 'Mitchell', is_host: true }),
-      makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
+      makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki', native_language: 'Dutch' }),
     ])
     vi.mocked(fetchCardWithTranslations).mockResolvedValue(
       makeCardText({
@@ -145,6 +145,32 @@ describe('ParticipantPlay', () => {
     ).toBeInTheDocument()
     expect(screen.queryByText('週末は何をするのが好きですか？')).not.toBeInTheDocument()
     expect(screen.queryByText('Voor Yuki')).not.toBeInTheDocument()
+  })
+
+  it('renders the blind message in Japanese when the participant native language is Japanese', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: 'host-1', display_name: 'Mitchell', is_host: true }),
+      makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki', native_language: 'Japanese' }),
+    ])
+
+    renderParticipantPlay()
+    await screen.findByText('Waiting for the dealer…')
+
+    act(() => {
+      eventCallback?.(
+        makeCardDrawnEvent({
+          card_id: 'card-1',
+          target_participant_id: PARTICIPANT_ID,
+          practice_language: 'Dutch',
+          native_language: 'Japanese',
+        }),
+      )
+    })
+
+    expect(
+      await screen.findByText('誰かがあなたに質問しています — よく聞いてください'),
+    ).toBeInTheDocument()
   })
 
   it('renders the card when a card_drawn event targets someone else', async () => {
@@ -186,7 +212,7 @@ describe('ParticipantPlay', () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
     vi.mocked(listParticipants).mockResolvedValue([
       makeParticipant({ id: 'host-1', display_name: 'Host', is_host: true }),
-      makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
+      makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki', native_language: 'Dutch' }),
       makeParticipant({ id: 'guest-2', display_name: 'Lena' }),
     ])
     vi.mocked(fetchCardWithTranslations).mockResolvedValue(

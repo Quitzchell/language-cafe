@@ -526,11 +526,16 @@ describe('HostPlay', () => {
     expect(vi.mocked(fetchCardWithTranslations)).not.toHaveBeenCalled()
   })
 
-  it('shows the blind message when the host is target of the current card', async () => {
+  it('shows the blind message in the host native language when the host is target', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
     vi.mocked(isHostOfSession).mockResolvedValue(true)
     vi.mocked(listParticipants).mockResolvedValue([
-      makeParticipant({ id: HOST_PARTICIPANT_ID, display_name: 'Mitchell', is_host: true }),
+      makeParticipant({
+        id: HOST_PARTICIPANT_ID,
+        display_name: 'Mitchell',
+        is_host: true,
+        native_language: 'Dutch',
+      }),
       makeParticipant({ id: 'guest-1', display_name: 'Yuki', is_host: false }),
     ])
     vi.mocked(fetchCurrentDealer).mockResolvedValue('guest-1')
@@ -559,6 +564,39 @@ describe('HostPlay', () => {
       await screen.findByText('Iemand stelt jou een vraag — luister goed'),
     ).toBeInTheDocument()
     expect(screen.queryByText(/Wachten op/)).not.toBeInTheDocument()
+  })
+
+  it('renders the blind message in Japanese when the host native language is Japanese', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(isHostOfSession).mockResolvedValue(true)
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({
+        id: HOST_PARTICIPANT_ID,
+        display_name: 'Mitchell',
+        is_host: true,
+        native_language: 'Japanese',
+      }),
+      makeParticipant({ id: 'guest-1', display_name: 'Pim', is_host: false }),
+    ])
+    vi.mocked(fetchCurrentDealer).mockResolvedValue('guest-1')
+
+    renderHostPlay()
+    await screen.findByText('Waiting for Pim…')
+
+    act(() => {
+      eventCallback?.(
+        makeCardDrawnEvent({
+          card_id: 'card-1',
+          target_participant_id: HOST_PARTICIPANT_ID,
+          practice_language: 'Dutch',
+          native_language: 'Japanese',
+        }),
+      )
+    })
+
+    expect(
+      await screen.findByText('誰かがあなたに質問しています — よく聞いてください'),
+    ).toBeInTheDocument()
   })
 
   it('keeps the current card on screen when a card_skipped event arrives alone', async () => {
