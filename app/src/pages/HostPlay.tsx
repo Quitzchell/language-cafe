@@ -108,13 +108,13 @@ export function HostPlay() {
   if (access === 'waiting') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
-        <h1 className="text-2xl font-semibold">Sessie nog niet gestart</h1>
+        <h1 className="text-2xl font-semibold">Session not started yet</h1>
         <Button
           size="sm"
           variant="outline"
           onClick={() => navigate(`/session/${sessionId}`)}
         >
-          Terug naar wachtkamer
+          Back to waiting room
         </Button>
       </div>
     )
@@ -204,10 +204,10 @@ export function HostPlay() {
   }
 
   const dealerName =
-    participants.find((p) => p.id === currentDealerId)?.display_name ?? 'de dealer'
+    participants.find((p) => p.id === currentDealerId)?.display_name ?? 'the dealer'
   const targetName = card
     ? (participants.find((p) => p.id === card.payload.target_participant_id)?.display_name ??
-      'onbekend')
+      'unknown')
     : null
 
   return (

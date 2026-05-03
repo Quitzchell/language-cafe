@@ -2,13 +2,13 @@ import { NameTakenError } from '@/lib/sessions'
 
 export function friendlyMessage(error: Error): string {
   if (error instanceof NameTakenError) {
-    return 'Die naam is al bezet. Kies een andere.'
+    return 'That name is already taken. Pick another one.'
   }
   if (error.message.toLowerCase().includes('failed to fetch')) {
-    return 'Kan geen verbinding maken. Controleer je internetverbinding.'
+    return "Can't connect. Check your internet connection."
   }
   if (/no cards left/i.test(error.message)) {
-    return 'Geen kaarten meer op dit niveau.'
+    return 'No cards left at this level.'
   }
-  return error.message || 'Er ging iets mis.'
+  return error.message || 'Something went wrong.'
 }

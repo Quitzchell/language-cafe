@@ -144,7 +144,7 @@ describe('ParticipantPlay', () => {
       await screen.findByText('Iemand stelt jou een vraag — luister goed'),
     ).toBeInTheDocument()
     expect(screen.queryByText('週末は何をするのが好きですか？')).not.toBeInTheDocument()
-    expect(screen.queryByText('Voor Yuki')).not.toBeInTheDocument()
+    expect(screen.queryByText('For Yuki')).not.toBeInTheDocument()
   })
 
   it('renders the blind message in Japanese when the participant native language is Japanese', async () => {
@@ -201,7 +201,7 @@ describe('ParticipantPlay', () => {
       )
     })
 
-    expect(await screen.findByText('Voor Lena')).toBeInTheDocument()
+    expect(await screen.findByText('For Lena')).toBeInTheDocument()
     expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
     expect(
       screen.queryByText('Iemand stelt jou een vraag — luister goed'),
@@ -245,7 +245,7 @@ describe('ParticipantPlay', () => {
     })
 
     expect(
-      await screen.findByRole('heading', { name: 'Kies een deelnemer' }),
+      await screen.findByRole('heading', { name: 'Pick a participant' }),
     ).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: /Lena/ }))
@@ -273,7 +273,7 @@ describe('ParticipantPlay', () => {
     )
 
     renderParticipantPlay()
-    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+    await screen.findByRole('heading', { name: 'Pick a participant' })
 
     act(() => {
       eventCallback?.(
@@ -289,7 +289,7 @@ describe('ParticipantPlay', () => {
     await screen.findByText('週末は何をするのが好きですか？')
 
     expect(
-      screen.queryByRole('heading', { name: 'Kies een deelnemer' }),
+      screen.queryByRole('heading', { name: 'Pick a participant' }),
     ).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Host/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Lena/ })).not.toBeInTheDocument()
@@ -306,7 +306,7 @@ describe('ParticipantPlay', () => {
     renderParticipantPlay()
 
     expect(
-      await screen.findByRole('heading', { name: 'Kies een deelnemer' }),
+      await screen.findByRole('heading', { name: 'Pick a participant' }),
     ).toBeInTheDocument()
   })
 
@@ -335,7 +335,7 @@ describe('ParticipantPlay', () => {
 
     renderParticipantPlay()
 
-    expect(await screen.findByText('Voor Lena')).toBeInTheDocument()
+    expect(await screen.findByText('For Lena')).toBeInTheDocument()
     expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
     expect(screen.queryByText('Waiting for the dealer…')).not.toBeInTheDocument()
   })

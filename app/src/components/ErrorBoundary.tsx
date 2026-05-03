@@ -18,9 +18,9 @@ export class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
-          <h1 className="text-2xl font-semibold">Er ging iets mis</h1>
+          <h1 className="text-2xl font-semibold">Something went wrong</h1>
           <p className="text-sm text-muted-foreground">
-            Herlaad de pagina om het opnieuw te proberen.
+            Reload the page to try again.
           </p>
         </div>
       )

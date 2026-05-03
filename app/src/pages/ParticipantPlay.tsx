@@ -101,7 +101,7 @@ export function ParticipantPlay() {
 
   const targetName = card
     ? (participants.find((p) => p.id === card.payload.target_participant_id)?.display_name ??
-      'onbekend')
+      'unknown')
     : null
 
   return (

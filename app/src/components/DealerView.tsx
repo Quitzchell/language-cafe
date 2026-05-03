@@ -40,7 +40,7 @@ export function DealerView({
   )
   const targetName = card
     ? (participants.find((p) => p.id === card.payload.target_participant_id)?.display_name ??
-      'onbekend')
+      'unknown')
     : null
 
   return (
@@ -61,24 +61,24 @@ export function DealerView({
                 disabled={loading.skip}
                 onClick={onSkip}
               >
-                Overslaan
+                Skip
               </Button>
               <Button
                 size="sm"
                 disabled={loading.pass}
                 onClick={onPass}
               >
-                Beurt doorgeven
+                Pass turn
               </Button>
             </div>
           </div>
         )
       ) : (
         <div className="flex flex-col gap-3 w-full max-w-md">
-          <h2 className="text-lg font-medium">Kies een deelnemer</h2>
+          <h2 className="text-lg font-medium">Pick a participant</h2>
           {pickables.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">
-              Nog geen deelnemers in de sessie.
+              No participants in the session yet.
             </p>
           ) : (
             <ul className="flex flex-col gap-2">

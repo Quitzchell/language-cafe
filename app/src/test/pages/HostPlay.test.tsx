@@ -146,7 +146,7 @@ describe('HostPlay', () => {
 
     renderHostPlay()
 
-    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+    await screen.findByRole('heading', { name: 'Pick a participant' })
 
     expect(screen.queryByRole('button', { name: /Yuki/ })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Lena/ })).toBeInTheDocument()
@@ -180,7 +180,7 @@ describe('HostPlay', () => {
       )
     })
 
-    expect(await screen.findByText('Voor Yuki')).toBeInTheDocument()
+    expect(await screen.findByText('For Yuki')).toBeInTheDocument()
     expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
     expect(screen.getByText('Wat doe je graag in het weekend?')).toBeInTheDocument()
     expect(vi.mocked(fetchCardWithTranslations)).toHaveBeenCalledWith(
@@ -198,7 +198,7 @@ describe('HostPlay', () => {
     ])
 
     renderHostPlay()
-    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+    await screen.findByRole('heading', { name: 'Pick a participant' })
 
     act(() => {
       eventCallback?.(makeSessionEndedEvent())
@@ -224,11 +224,11 @@ describe('HostPlay', () => {
     await user.click(await screen.findByRole('button', { name: /Yuki/ }))
 
     expect(
-      await screen.findByText('Geen kaarten meer op dit niveau.'),
+      await screen.findByText('No cards left at this level.'),
     ).toBeInTheDocument()
   })
 
-  it('hides the Overslaan button before any card is drawn', async () => {
+  it('hides the Skip button before any card is drawn', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
     vi.mocked(isHostOfSession).mockResolvedValue(true)
     vi.mocked(listParticipants).mockResolvedValue([
@@ -239,10 +239,10 @@ describe('HostPlay', () => {
     renderHostPlay()
     await screen.findByRole('button', { name: /Yuki/ })
 
-    expect(screen.queryByRole('button', { name: /Overslaan/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Skip/i })).not.toBeInTheDocument()
   })
 
-  it('shows Overslaan after a card is drawn and calls skipCard on click', async () => {
+  it('shows Skip after a card is drawn and calls skipCard on click', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
     vi.mocked(isHostOfSession).mockResolvedValue(true)
     vi.mocked(listParticipants).mockResolvedValue([
@@ -271,7 +271,7 @@ describe('HostPlay', () => {
       )
     })
 
-    const skipButton = await screen.findByRole('button', { name: /Overslaan/i })
+    const skipButton = await screen.findByRole('button', { name: /Skip/i })
     await user.click(skipButton)
 
     expect(vi.mocked(skipCard)).toHaveBeenCalledWith(SESSION_ID, HOST_PARTICIPANT_ID)
@@ -307,14 +307,14 @@ describe('HostPlay', () => {
       )
     })
 
-    await user.click(await screen.findByRole('button', { name: /Overslaan/i }))
+    await user.click(await screen.findByRole('button', { name: /Skip/i }))
 
     expect(
-      await screen.findByText('Geen kaarten meer op dit niveau.'),
+      await screen.findByText('No cards left at this level.'),
     ).toBeInTheDocument()
   })
 
-  it('hides the Beurt doorgeven button before any card is drawn', async () => {
+  it('hides the Pass turn button before any card is drawn', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
     vi.mocked(isHostOfSession).mockResolvedValue(true)
     vi.mocked(listParticipants).mockResolvedValue([
@@ -326,11 +326,11 @@ describe('HostPlay', () => {
     await screen.findByRole('button', { name: /Yuki/ })
 
     expect(
-      screen.queryByRole('button', { name: /Beurt doorgeven/i }),
+      screen.queryByRole('button', { name: /Pass turn/i }),
     ).not.toBeInTheDocument()
   })
 
-  it('shows Beurt doorgeven after a card is drawn and calls passTurn with the receiver id', async () => {
+  it('shows Pass turn after a card is drawn and calls passTurn with the receiver id', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
     vi.mocked(isHostOfSession).mockResolvedValue(true)
     vi.mocked(listParticipants).mockResolvedValue([
@@ -359,7 +359,7 @@ describe('HostPlay', () => {
       )
     })
 
-    const passButton = await screen.findByRole('button', { name: /Beurt doorgeven/i })
+    const passButton = await screen.findByRole('button', { name: /Pass turn/i })
     await user.click(passButton)
 
     expect(vi.mocked(passTurn)).toHaveBeenCalledWith(
@@ -408,7 +408,7 @@ describe('HostPlay', () => {
       await screen.findByText('Waiting for Yuki…'),
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('heading', { name: 'Kies een deelnemer' }),
+      screen.queryByRole('heading', { name: 'Pick a participant' }),
     ).not.toBeInTheDocument()
     expect(screen.queryByText('週末は何をするのが好きですか？')).not.toBeInTheDocument()
   })
@@ -443,7 +443,7 @@ describe('HostPlay', () => {
       )
     })
 
-    await user.click(await screen.findByRole('button', { name: /Beurt doorgeven/i }))
+    await user.click(await screen.findByRole('button', { name: /Pass turn/i }))
 
     expect(
       await screen.findByText('No card to pass on'),
@@ -491,10 +491,10 @@ describe('HostPlay', () => {
 
     renderHostPlay()
 
-    expect(await screen.findByText('Voor Yuki')).toBeInTheDocument()
+    expect(await screen.findByText('For Yuki')).toBeInTheDocument()
     expect(screen.getByText('週末は何をするのが好きですか？')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Overslaan/i })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Beurt doorgeven/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Skip/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Pass turn/i })).toBeInTheDocument()
     expect(vi.mocked(fetchCardWithTranslations)).toHaveBeenCalledWith(
       'card-1',
       'Japanese',
@@ -521,8 +521,8 @@ describe('HostPlay', () => {
 
     renderHostPlay()
 
-    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
-    expect(screen.queryByText('Voor Yuki')).not.toBeInTheDocument()
+    await screen.findByRole('heading', { name: 'Pick a participant' })
+    expect(screen.queryByText('For Yuki')).not.toBeInTheDocument()
     expect(vi.mocked(fetchCardWithTranslations)).not.toHaveBeenCalled()
   })
 
@@ -652,7 +652,7 @@ describe('HostPlay', () => {
     )
 
     renderHostPlay()
-    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+    await screen.findByRole('heading', { name: 'Pick a participant' })
 
     act(() => {
       eventCallback?.(
@@ -668,7 +668,7 @@ describe('HostPlay', () => {
     await screen.findByText('週末は何をするのが好きですか？')
 
     expect(
-      screen.queryByRole('heading', { name: 'Kies een deelnemer' }),
+      screen.queryByRole('heading', { name: 'Pick a participant' }),
     ).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Yuki/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: /Lena/ })).not.toBeInTheDocument()
@@ -691,7 +691,7 @@ describe('HostPlay', () => {
     vi.mocked(computeAskedThisRound).mockReturnValue(new Set(['guest-1']))
 
     renderHostPlay()
-    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+    await screen.findByRole('heading', { name: 'Pick a participant' })
 
     act(() => {
       eventCallback?.(
@@ -711,7 +711,7 @@ describe('HostPlay', () => {
       )
     })
 
-    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+    await screen.findByRole('heading', { name: 'Pick a participant' })
     expect(screen.queryByRole('button', { name: /Yuki/ })).not.toBeInTheDocument()
     expect(screen.getByRole('button', { name: /Lena/ })).toBeInTheDocument()
     expect(screen.queryByText('週末は何をするのが好きですか？')).not.toBeInTheDocument()
@@ -732,7 +732,7 @@ describe('HostPlay', () => {
     )
 
     renderHostPlay()
-    await screen.findByRole('heading', { name: 'Kies een deelnemer' })
+    await screen.findByRole('heading', { name: 'Pick a participant' })
 
     act(() => {
       eventCallback?.(
@@ -761,7 +761,7 @@ describe('HostPlay', () => {
     })
 
     expect(
-      screen.queryByRole('heading', { name: 'Kies een deelnemer' }),
+      screen.queryByRole('heading', { name: 'Pick a participant' }),
     ).not.toBeInTheDocument()
   })
 

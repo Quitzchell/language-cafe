@@ -176,7 +176,7 @@ describe('ParticipantJoin guards', () => {
     await user.click(screen.getByRole('button', { name: 'Join session' }))
 
     expect(
-      await screen.findByText('Die naam is al bezet. Kies een andere.'),
+      await screen.findByText('That name is already taken. Pick another one.'),
     ).toBeInTheDocument()
   })
 
