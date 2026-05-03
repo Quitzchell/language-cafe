@@ -99,6 +99,8 @@ export function ParticipantPlay() {
     )
   }
 
+  const dealerName =
+    participants.find((p) => p.id === currentDealerId)?.display_name ?? 'the dealer'
   const targetName = card
     ? (participants.find((p) => p.id === card.payload.target_participant_id)?.display_name ??
       'unknown')
@@ -114,7 +116,7 @@ export function ParticipantPlay() {
           targetName={targetName}
         />
       ) : (
-        <p className="text-muted-foreground">Waiting for the dealer…</p>
+        <p className="text-muted-foreground">Waiting for {dealerName}…</p>
       )}
     </div>
   )

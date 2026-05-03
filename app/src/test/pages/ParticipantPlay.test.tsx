@@ -113,6 +113,19 @@ describe('ParticipantPlay', () => {
     expect(await screen.findByText('Waiting for the dealer…')).toBeInTheDocument()
   })
 
+  it('names the current dealer in the waiting placeholder', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: 'host-1', display_name: 'Mitchell', is_host: true }),
+      makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
+    ])
+    vi.mocked(fetchCurrentDealer).mockResolvedValue('host-1')
+
+    renderParticipantPlay()
+
+    expect(await screen.findByText('Waiting for Mitchell…')).toBeInTheDocument()
+  })
+
   it('shows the blind message when a card_drawn event targets me', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession({ status: 'active' }))
     vi.mocked(listParticipants).mockResolvedValue([
