@@ -11,7 +11,6 @@ import {NativeLanguageSelect} from '@/pages/NativeLanguageSelect'
 import {ParticipantJoin} from '@/pages/ParticipantJoin'
 import {ParticipantPlay} from '@/pages/ParticipantPlay'
 import {ParticipantWaitingRoom} from '@/pages/ParticipantWaitingRoom'
-import {SoloPlayStub} from '@/pages/SoloPlayStub'
 import {TargetLanguageSelect} from '@/pages/TargetLanguageSelect'
 
 function App() {
@@ -31,7 +30,6 @@ function App() {
                         <Route path="/target" element={<TargetLanguageSelect/>}/>
                         <Route element={<RequireTargetLanguage/>}>
                             <Route path="/mode" element={<ModeSelect/>}/>
-                            <Route path="/play" element={<SoloPlayStub/>}/>
                         </Route>
                     </Route>
                 </Routes>

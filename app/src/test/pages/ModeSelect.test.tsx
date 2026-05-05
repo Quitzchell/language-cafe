@@ -54,7 +54,6 @@ describe('ModeSelect multiplayer flow', () => {
       },
     )
 
-    await user.click(screen.getByRole('button', { name: 'With others' }))
     await user.type(screen.getByRole('textbox', { name: 'Session title' }), 'Tuesday café')
     await user.type(screen.getByRole('textbox', { name: 'Your name' }), 'Mitchell')
     await user.click(screen.getByRole('button', { name: 'Continue' }))
@@ -85,7 +84,6 @@ describe('ModeSelect multiplayer flow', () => {
       },
     )
 
-    await user.click(screen.getByRole('button', { name: 'With others' }))
     const submit = screen.getByRole('button', { name: 'Continue' })
     expect(submit).toBeDisabled()
 
