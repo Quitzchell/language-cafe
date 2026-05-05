@@ -220,8 +220,9 @@ export function HostPlay() {
             romanization={card.text.romanization}
             targetName={targetName}
           />
-        ) : null}
-        <p className="text-muted-foreground">Waiting for {dealerName}…</p> {/* todo: it is fine if this is just 'Wait for dealer' in the player their native language  */}
+        ) : (
+          <p className="text-muted-foreground">Waiting for {dealerName}…</p>
+        )}
       </div>
       <div className="flex justify-center pt-8">{endButton}</div>
     </div>
