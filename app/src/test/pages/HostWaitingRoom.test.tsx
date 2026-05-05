@@ -47,7 +47,6 @@ const persistedAsHost = {
   nativeLanguage: 'Dutch' as const,
   targetLanguage: 'Japanese' as const,
   proficiencyLevels: ['B1'],
-  mode: 'multiplayer' as const,
   sessionId: SESSION_ID,
   sessionTitle: 'Test session',
   participantId: HOST_PARTICIPANT_ID,

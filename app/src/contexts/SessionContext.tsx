@@ -2,13 +2,10 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 
 import type { CEFRLevel, Language } from '@/lib/languages'
 
-export type PlayMode = 'solo' | 'multiplayer'
-
 type PersistedSession = {
   nativeLanguage: Language | null
   targetLanguage: Language | null
   proficiencyLevels: CEFRLevel[]
-  mode: PlayMode | null
   sessionId: string | null
   sessionTitle: string | null
   participantId: string | null
@@ -17,7 +14,6 @@ type PersistedSession = {
 type SessionState = PersistedSession & {
   setNativeLanguage: (language: Language) => void
   setTarget: (language: Language, levels: CEFRLevel[]) => void
-  setSolo: () => void
   setMultiplayer: (sessionId: string, sessionTitle: string, participantId: string) => void
 }
 
@@ -27,7 +23,6 @@ const EMPTY: PersistedSession = {
   nativeLanguage: null,
   targetLanguage: null,
   proficiencyLevels: [],
-  mode: null,
   sessionId: null,
   sessionTitle: null,
   participantId: null,
@@ -52,7 +47,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   const [nativeLanguage, setNativeLanguage] = useState<Language | null>(initial.nativeLanguage)
   const [targetLanguage, setTargetLanguage] = useState<Language | null>(initial.targetLanguage)
   const [proficiencyLevels, setProficiencyLevels] = useState<CEFRLevel[]>(initial.proficiencyLevels)
-  const [mode, setMode] = useState<PlayMode | null>(initial.mode)
   const [sessionId, setSessionId] = useState<string | null>(initial.sessionId)
   const [sessionTitle, setSessionTitle] = useState<string | null>(initial.sessionTitle)
   const [participantId, setParticipantId] = useState<string | null>(initial.participantId)
@@ -63,7 +57,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
       nativeLanguage,
       targetLanguage,
       proficiencyLevels,
-      mode,
       sessionId,
       sessionTitle,
       participantId,
@@ -73,22 +66,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     } catch {
       // sessionStorage can throw in private mode; state still lives in memory.
     }
-  }, [nativeLanguage, targetLanguage, proficiencyLevels, mode, sessionId, sessionTitle, participantId])
+  }, [nativeLanguage, targetLanguage, proficiencyLevels, sessionId, sessionTitle, participantId])
 
   function setTarget(language: Language, levels: CEFRLevel[]) {
     setTargetLanguage(language)
     setProficiencyLevels(levels)
   }
 
-  function setSolo() {
-    setMode('solo')
-    setSessionId(null)
-    setSessionTitle(null)
-    setParticipantId(null)
-  }
-
   function setMultiplayer(newSessionId: string, newTitle: string, newParticipantId: string) {
-    setMode('multiplayer')
     setSessionId(newSessionId)
     setSessionTitle(newTitle)
     setParticipantId(newParticipantId)
@@ -100,13 +85,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         nativeLanguage,
         targetLanguage,
         proficiencyLevels,
-        mode,
         sessionId,
         sessionTitle,
         participantId,
         setNativeLanguage,
         setTarget,
-        setSolo,
         setMultiplayer,
       }}
     >

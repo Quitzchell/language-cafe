@@ -11,7 +11,6 @@ type PersistedSession = Partial<{
   nativeLanguage: string | null
   targetLanguage: string | null
   proficiencyLevels: string[]
-  mode: 'solo' | 'multiplayer' | null
   sessionId: string | null
   sessionTitle: string | null
   participantId: string | null

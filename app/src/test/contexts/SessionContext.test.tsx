@@ -67,7 +67,6 @@ describe('SessionProvider persistence', () => {
     expect(payload.sessionId).toBe('s-1')
     expect(payload.sessionTitle).toBe('Title')
     expect(payload.participantId).toBe('p-1')
-    expect(payload.mode).toBe('multiplayer')
   })
 
   it('state survives a re-mount of the provider', () => {

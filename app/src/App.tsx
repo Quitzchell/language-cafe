@@ -1,4 +1,4 @@
-import {BrowserRouter, Routes, Route} from 'react-router-dom'
+import {BrowserRouter, Navigate, Routes, Route} from 'react-router-dom'
 
 import {RequireNativeLanguage} from '@/components/RequireNativeLanguage'
 import {RequireTargetLanguage} from '@/components/RequireTargetLanguage'
@@ -32,6 +32,7 @@ function App() {
                             <Route path="/mode" element={<ModeSelect/>}/>
                         </Route>
                     </Route>
+                    <Route path="*" element={<Navigate to="/" replace/>}/>
                 </Routes>
             </BrowserRouter>
         </SessionProvider>
