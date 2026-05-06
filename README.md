@@ -1,6 +1,8 @@
 # Language Cafe
 
-A React + Vite application with Supabase, running in Docker.
+A turn-based language practice game. A host creates a session, picks a target language, and participants join from their own devices. The dealer (initially the host, then rotating) draws conversation prompts for one participant at a time; each card is shown in the practice language with a translation in the receiver's native language. Translations cover Dutch and Japanese today; Japanese cards include romanization for non-Latin scripts.
+
+The stack is React + Vite on the front end, Supabase (Postgres + Realtime + PostgREST + Kong) on the back, all wired up via Docker Compose for local development.
 
 ## Prerequisites
 
@@ -75,10 +77,10 @@ This removes the database volume and recreates the container, giving you a clean
 
 ### Adding a new migration
 
-1. Create a new numbered SQL file in `supabase/migrations/`:
+1. Create a new numbered SQL file in `supabase/migrations/`, continuing from the highest existing number:
 
    ```
-   supabase/migrations/006_create_new_table.sql
+   supabase/migrations/024_create_new_table.sql
    ```
 
 2. Reset the database to apply it:
@@ -93,28 +95,31 @@ This removes the database volume and recreates the container, giving you a clean
 
 A language practice session created by a host.
 
-| Column           | Type        | Description                     |
-| ---------------- | ----------- | ------------------------------- |
-| `id`             | uuid (PK)   | Auto-generated                  |
-| `title`          | text        | Name chosen by the host         |
-| `target_language`| text        | Language being practiced        |
-| `created_at`     | timestamptz | Defaults to now()               |
+| Column                 | Type        | Description                                                |
+| ---------------------- | ----------- | ---------------------------------------------------------- |
+| `id`                   | uuid (PK)   | Auto-generated                                             |
+| `title`                | text        | Name chosen by the host                                    |
+| `target_language`      | text        | Language being practiced                                   |
+| `host_native_language` | text        | Host's mother tongue (used to resolve practice language)   |
+| `status`               | text        | Lifecycle: `waiting`, `active`, or `ended`                 |
+| `ended_at`             | timestamptz | Set when the session ends; null otherwise                  |
+| `created_at`           | timestamptz | Defaults to now()                                          |
 
 #### `participants`
 
-People who join a session. The first participant is typically the host.
+People who join a session. The first participant is the host.
 
-| Column             | Type        | Description                          |
-| ------------------ | ----------- | ------------------------------------ |
-| `id`               | uuid (PK)   | Auto-generated                       |
-| `session_id`       | uuid (FK)   | References `sessions`                |
-| `display_name`     | text        | Chosen by the participant            |
-| `native_language`  | text        | Participant's mother tongue          |
-| `proficiency_level`| text        | CEFR level: A1, A2, B1, B2, C1, C2  |
-| `is_host`          | boolean     | Whether this participant is the host |
-| `joined_at`        | timestamptz | Defaults to now()                    |
+| Column               | Type        | Description                                                  |
+| -------------------- | ----------- | ------------------------------------------------------------ |
+| `id`                 | uuid (PK)   | Auto-generated                                               |
+| `session_id`         | uuid (FK)   | References `sessions`                                        |
+| `display_name`       | text        | Chosen by the participant                                    |
+| `native_language`    | text        | Participant's mother tongue                                  |
+| `proficiency_levels` | text[]      | CEFR levels (subset of A1, A2, B1, B2, C1, C2); at least one |
+| `is_host`            | boolean     | Whether this participant is the host                         |
+| `joined_at`          | timestamptz | Defaults to now()                                            |
 
-Unique constraint on `(session_id, display_name)`.
+Unique constraint on `(session_id, display_name)`. Multiple levels let learners who straddle two CEFR bands (e.g. JLPT N1 → C1 + C2) draw from a wider card pool.
 
 #### `cards`
 
@@ -131,34 +136,38 @@ Conversation prompt questions, always stored in English.
 
 Translations of card questions into supported languages (Dutch, Japanese).
 
-| Column        | Type      | Description                  |
-| ------------- | --------- | ---------------------------- |
-| `id`          | uuid (PK) | Auto-generated               |
-| `card_id`     | uuid (FK) | References `cards`           |
-| `language`    | text      | Target language              |
-| `translation` | text      | The question in that language|
+| Column         | Type      | Description                                                       |
+| -------------- | --------- | ----------------------------------------------------------------- |
+| `id`           | uuid (PK) | Auto-generated                                                    |
+| `card_id`      | uuid (FK) | References `cards`                                                |
+| `language`     | text      | Target language                                                   |
+| `translation`  | text      | The question in that language                                     |
+| `romanization` | text      | Optional Latin transliteration for non-Latin scripts (e.g. romaji) |
 
 Unique constraint on `(card_id, language)`.
 
-#### `session_cards_used`
+#### `session_events`
 
-Tracks which card was shown to which participant during a session.
+Append-only event log per session. The event log is the source of truth for which cards have been drawn, who the current dealer is, and when the session ended; there is no separate "cards used" table.
 
-| Column           | Type        | Description               |
-| ---------------- | ----------- | ------------------------- |
-| `id`             | uuid (PK)   | Auto-generated            |
-| `session_id`     | uuid (FK)   | References `sessions`     |
-| `card_id`        | uuid (FK)   | References `cards`        |
-| `participant_id` | uuid (FK)   | References `participants` |
-| `used_at`        | timestamptz | Defaults to now()         |
+| Column                 | Type        | Description                                                       |
+| ---------------------- | ----------- | ----------------------------------------------------------------- |
+| `id`                   | uuid (PK)   | Auto-generated                                                    |
+| `session_id`           | uuid (FK)   | References `sessions` (cascades on delete)                        |
+| `type`                 | text        | `session_started`, `session_ended`, `card_drawn`, `card_skipped`, `turn_passed` |
+| `payload`              | jsonb       | Event-specific data (e.g. `card_id`, `target_participant_id`)      |
+| `actor_participant_id` | uuid (FK)   | Participant that emitted the event; null for system events        |
+| `turn_number`          | int         | Monotonic per session, set on `card_drawn`                         |
+| `created_at`           | timestamptz | Defaults to now()                                                  |
 
 #### How cards work
 
-Cards are always authored in English. At runtime, the app uses the session's `target_language` and the participant's `native_language` to look up the right translations:
+Cards are always authored in English. At runtime, the app uses the session's `target_language` and the receiver's `native_language` to look up the right translations:
 
-- **Question**: `card_translations` row where `language` matches `session.target_language`
-- **Hint**: `card_translations` row where `language` matches `participant.native_language`
-- If the participant's native language is English, the hint comes directly from `cards.question`
+- **Question**: shown in the practice language. If the receiver's native language matches the host's, practice = `target_language`; otherwise practice = host's native language. (This lets a Japanese-native host run a Japanese session for Dutch participants while still drilling the Dutch host's vocabulary in mixed groups.)
+- **Hint**: `card_translations` row where `language` matches the receiver's `native_language`.
+- If the receiver's native language is English, the hint comes directly from `cards.question`.
+- For non-Latin practice languages, the optional `romanization` line is rendered under the question.
 
 #### Editing cards
 

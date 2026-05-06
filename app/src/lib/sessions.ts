@@ -17,22 +17,45 @@ export type Session = {
   ended_at: string | null
 }
 
-export type SessionEvent = {
+type BaseSessionEvent = {
   id: string
   session_id: string
-  type: string
-  payload: Record<string, unknown>
   actor_participant_id: string | null
   turn_number: number | null
   created_at: string
 }
+
+export type CardDrawnPayload = {
+  card_id: string
+  target_participant_id: string
+  practice_language: Language
+  native_language: Language
+}
+
+export type CardDrawnEvent = BaseSessionEvent & {
+  type: 'card_drawn'
+  payload: CardDrawnPayload
+}
+
+export type SessionEvent =
+  | (BaseSessionEvent & { type: 'session_started'; payload: Record<string, never> })
+  | CardDrawnEvent
+  | (BaseSessionEvent & {
+      type: 'session_ended'
+      payload: { reason: 'host' | 'inactivity' }
+    })
+  | (BaseSessionEvent & { type: 'card_skipped'; payload: { card_id: string } })
+  | (BaseSessionEvent & {
+      type: 'turn_passed'
+      payload: { next_participant_id: string }
+    })
 
 export type Participant = {
   id: string
   session_id: string
   display_name: string
   native_language: Language
-  proficiency_level: CEFRLevel
+  proficiency_levels: CEFRLevel[]
   is_host: boolean
   joined_at: string
 }
@@ -51,27 +74,33 @@ export class NameTakenError extends Error {
 
 type CreateHostedSessionParams = {
   title: string
+  hostDisplayName: string
   targetLanguage: Language
   hostNativeLanguage: Language
-  hostProficiencyLevel: CEFRLevel
+  hostProficiencyLevels: CEFRLevel[]
 }
 
 export async function createHostedSession({
   title,
+  hostDisplayName,
   targetLanguage,
   hostNativeLanguage,
-  hostProficiencyLevel,
+  hostProficiencyLevels,
 }: CreateHostedSessionParams): Promise<HostedSession> {
   const { data, error } = await supabase
     .rpc('create_hosted_session', {
       p_title: title,
+      p_host_display_name: hostDisplayName,
       p_target_language: targetLanguage,
       p_host_native_language: hostNativeLanguage,
-      p_host_proficiency_level: hostProficiencyLevel,
+      p_host_proficiency_levels: hostProficiencyLevels,
     })
     .single<{ session_id: string; participant_id: string }>()
 
   if (error || !data) {
+    if (error?.code === '23505') {
+      throw new NameTakenError(hostDisplayName)
+    }
     throw new Error(error?.message ?? 'Failed to create session')
   }
 
@@ -105,21 +134,167 @@ export async function endSession(
   if (error) throw new Error(error.message)
 }
 
+export async function startSession(
+  sessionId: string,
+  actorParticipantId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('start_session', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function drawCard(
+  sessionId: string,
+  actorParticipantId: string,
+  targetParticipantId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('draw_card', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+    p_target_participant_id: targetParticipantId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function skipCard(
+  sessionId: string,
+  actorParticipantId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('skip_card', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function passTurn(
+  sessionId: string,
+  actorParticipantId: string,
+  nextParticipantId: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('pass_turn', {
+    p_session_id: sessionId,
+    p_actor_participant_id: actorParticipantId,
+    p_next_participant_id: nextParticipantId,
+  })
+  if (error) throw new Error(error.message)
+}
+
+export async function fetchCurrentDealer(sessionId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('session_events')
+    .select('payload')
+    .eq('session_id', sessionId)
+    .eq('type', 'turn_passed')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  if (!data) return null
+  const payload = data.payload as { next_participant_id?: string } | null
+  return payload?.next_participant_id ?? null
+}
+
+export async function hasTurnPassedAfter(
+  sessionId: string,
+  createdAt: string,
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('session_events')
+    .select('id')
+    .eq('session_id', sessionId)
+    .eq('type', 'turn_passed')
+    .gt('created_at', createdAt)
+    .limit(1)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return !!data
+}
+
+export async function listCardDrawnEvents(sessionId: string): Promise<CardDrawnEvent[]> {
+  const { data, error } = await supabase
+    .from('session_events')
+    .select('id, session_id, type, payload, actor_participant_id, turn_number, created_at')
+    .eq('session_id', sessionId)
+    .eq('type', 'card_drawn')
+    .order('created_at', { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as CardDrawnEvent[]
+}
+
+// Returns the set of participant ids who have been target at least once in
+// the current round. A round has exactly N target slots (N = participant
+// count); consecutive same-target events (skips) collapse into one slot.
+// When `distinctTargetCount % N === 0`, the round just closed and the next
+// one starts fresh — returns an empty set.
+export function computeAskedThisRound(
+  events: CardDrawnEvent[],
+  participantCount: number,
+): Set<string> {
+  if (participantCount <= 0) return new Set()
+
+  const distinctTargets: string[] = []
+  let prev: string | null = null
+  for (const e of events) {
+    const target = e.payload.target_participant_id
+    if (target !== prev) {
+      distinctTargets.push(target)
+      prev = target
+    }
+  }
+
+  const slotsThisRound = distinctTargets.length % participantCount
+  if (slotsThisRound === 0) return new Set()
+  return new Set(distinctTargets.slice(-slotsThisRound))
+}
+
+export async function fetchCardWithTranslations(
+  cardId: string,
+  practiceLanguage: Language,
+  nativeLanguage: Language,
+): Promise<{ practice: string; native: string; romanization: string | null }> {
+  const { data, error } = await supabase
+    .from('card_translations')
+    .select('language, translation, romanization')
+    .eq('card_id', cardId)
+    .in('language', [practiceLanguage, nativeLanguage])
+
+  if (error) throw new Error(error.message)
+
+  const byLang = new Map<string, { translation: string; romanization: string | null }>(
+    (data ?? []).map((row) => [
+      row.language as string,
+      {
+        translation: row.translation as string,
+        romanization: (row.romanization as string | null) ?? null,
+      },
+    ]),
+  )
+  const practiceRow = byLang.get(practiceLanguage)
+  const nativeRow = byLang.get(nativeLanguage)
+  if (!practiceRow || !nativeRow) {
+    throw new Error('Missing translation for card')
+  }
+  return {
+    practice: practiceRow.translation,
+    native: nativeRow.translation,
+    romanization: practiceRow.romanization,
+  }
+}
+
 export function subscribeToSessionEvents(
   sessionId: string,
   onInsert: (event: SessionEvent) => void,
 ): () => void {
   const channel = supabase
     .channel(`session:${sessionId}:events`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'session_events',
-        filter: `session_id=eq.${sessionId}`,
-      },
-      (payload) => onInsert(payload.new as SessionEvent),
+    .on('broadcast', { event: 'insert' }, (msg) =>
+      onInsert(msg.payload as SessionEvent),
     )
     .subscribe()
 
@@ -154,14 +329,14 @@ type CreateParticipantParams = {
   sessionId: string
   displayName: string
   nativeLanguage: Language
-  proficiencyLevel: CEFRLevel
+  proficiencyLevels: CEFRLevel[]
 }
 
 export async function createParticipant({
   sessionId,
   displayName,
   nativeLanguage,
-  proficiencyLevel,
+  proficiencyLevels,
 }: CreateParticipantParams): Promise<{ id: string }> {
   const { data, error } = await supabase
     .from('participants')
@@ -169,7 +344,7 @@ export async function createParticipant({
       session_id: sessionId,
       display_name: displayName,
       native_language: nativeLanguage,
-      proficiency_level: proficiencyLevel,
+      proficiency_levels: proficiencyLevels,
       is_host: false,
     })
     .select('id')
@@ -188,7 +363,7 @@ export async function createParticipant({
 export async function listParticipants(sessionId: string): Promise<Participant[]> {
   const { data, error } = await supabase
     .from('participants')
-    .select('id, session_id, display_name, native_language, proficiency_level, is_host, joined_at')
+    .select('id, session_id, display_name, native_language, proficiency_levels, is_host, joined_at')
     .eq('session_id', sessionId)
     .order('joined_at', { ascending: true })
 
@@ -202,15 +377,8 @@ export function subscribeToParticipants(
 ): () => void {
   const channel = supabase
     .channel(`session:${sessionId}:participants`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'participants',
-        filter: `session_id=eq.${sessionId}`,
-      },
-      (payload) => onInsert(payload.new as Participant),
+    .on('broadcast', { event: 'insert' }, (msg) =>
+      onInsert(msg.payload as Participant),
     )
     .subscribe()
 

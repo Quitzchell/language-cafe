@@ -5,7 +5,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Participant, SessionEvent } from '@/lib/sessions'
 import { ParticipantWaitingRoom } from '@/pages/ParticipantWaitingRoom'
 import { renderWithProviders } from '@/test/render'
-import { makeEvent, makeParticipant, makeSession } from '@/test/mocks/sessions'
+import {
+  makeParticipant,
+  makeSession,
+  makeSessionEndedEvent,
+  makeSessionStartedEvent,
+} from '@/test/mocks/sessions'
 
 vi.mock('@/lib/sessions', () => {
   class NameTakenError extends Error {}
@@ -16,6 +21,9 @@ vi.mock('@/lib/sessions', () => {
     isHostOfSession: vi.fn(),
     createParticipant: vi.fn(),
     listParticipants: vi.fn(),
+    listCardDrawnEvents: vi.fn(() => Promise.resolve([])),
+    fetchCurrentDealer: vi.fn(() => Promise.resolve(null)),
+    fetchCardWithTranslations: vi.fn(),
     subscribeToParticipants: vi.fn(() => () => {}),
     subscribeToSessionEvents: vi.fn(() => () => {}),
     endSession: vi.fn(),
@@ -24,7 +32,9 @@ vi.mock('@/lib/sessions', () => {
 })
 
 import {
+  fetchCurrentDealer,
   fetchSessionById,
+  listCardDrawnEvents,
   listParticipants,
   subscribeToParticipants,
   subscribeToSessionEvents,
@@ -36,8 +46,7 @@ const PARTICIPANT_ID = 'participant-1'
 const persistedAsParticipant = {
   nativeLanguage: 'Japanese' as const,
   targetLanguage: 'Dutch' as const,
-  proficiencyLevel: 'B1' as const,
-  mode: 'multiplayer' as const,
+  proficiencyLevels: ['B1'],
   sessionId: SESSION_ID,
   sessionTitle: 'Test session',
   participantId: PARTICIPANT_ID,
@@ -47,10 +56,12 @@ function renderWaitingRoom() {
   return renderWithProviders(
     <Routes>
       <Route path="/join/:sessionId/waiting" element={<ParticipantWaitingRoom />} />
+      <Route path="/join/:sessionId/play" element={<div>play route</div>} />
     </Routes>,
     {
       initialEntries: [`/join/${SESSION_ID}/waiting`],
       persisted: persistedAsParticipant,
+      sessionLiveId: SESSION_ID,
     },
   )
 }
@@ -64,6 +75,8 @@ describe('ParticipantWaitingRoom', () => {
     eventCallback = null
     vi.mocked(fetchSessionById).mockReset()
     vi.mocked(listParticipants).mockReset()
+    vi.mocked(listCardDrawnEvents).mockReset().mockResolvedValue([])
+    vi.mocked(fetchCurrentDealer).mockReset().mockResolvedValue(null)
     vi.mocked(subscribeToParticipants).mockImplementation((_id, cb) => {
       participantCallback = cb
       return () => {}
@@ -77,12 +90,16 @@ describe('ParticipantWaitingRoom', () => {
   it('adds a new participant to the list when realtime fires', async () => {
     vi.mocked(fetchSessionById).mockResolvedValue(makeSession())
     vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: 'host-1', display_name: 'Mitchell', is_host: true }),
       makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
     ])
 
     renderWaitingRoom()
 
     expect(await screen.findByText('Yuki')).toBeInTheDocument()
+    expect(screen.getByText('Mitchell')).toBeInTheDocument()
+    expect(screen.getByText('(host)')).toBeInTheDocument()
+    expect(screen.getByText('(you)')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Participants (1)' })).toBeInTheDocument()
 
     act(() => {
@@ -105,13 +122,29 @@ describe('ParticipantWaitingRoom', () => {
     expect(await screen.findByText('Yuki')).toBeInTheDocument()
 
     act(() => {
-      eventCallback?.(makeEvent({ type: 'session_ended' }))
+      eventCallback?.(makeSessionEndedEvent())
     })
 
     expect(
-      await screen.findByRole('heading', { name: 'Sessie is beëindigd' }),
+      await screen.findByRole('heading', { name: 'Session ended' }),
     ).toBeInTheDocument()
     expect(screen.queryByText('Yuki')).not.toBeInTheDocument()
+  })
+
+  it('navigates to the play route when session_started fires', async () => {
+    vi.mocked(fetchSessionById).mockResolvedValue(makeSession())
+    vi.mocked(listParticipants).mockResolvedValue([
+      makeParticipant({ id: PARTICIPANT_ID, display_name: 'Yuki' }),
+    ])
+
+    renderWaitingRoom()
+    expect(await screen.findByText('Yuki')).toBeInTheDocument()
+
+    act(() => {
+      eventCallback?.(makeSessionStartedEvent())
+    })
+
+    expect(await screen.findByText('play route')).toBeInTheDocument()
   })
 
   it('renders the ended screen if the session was already ended on load', async () => {
@@ -121,7 +154,7 @@ describe('ParticipantWaitingRoom', () => {
     renderWaitingRoom()
 
     expect(
-      await screen.findByRole('heading', { name: 'Sessie is beëindigd' }),
+      await screen.findByRole('heading', { name: 'Session ended' }),
     ).toBeInTheDocument()
   })
 })

@@ -10,6 +10,9 @@ const seedPath = resolve(repoRoot, 'supabase/seed.sql')
 
 const CEFR_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'])
 const REQUIRED_LANGUAGES = ['Dutch', 'Japanese']
+// Keep in sync with LANGUAGES[].script in app/src/lib/languages.ts.
+// Only non-Latin-script languages may carry a romanization.
+const NON_LATIN_LANGUAGES = new Set(['Japanese'])
 
 function fail(message) {
   console.error(`generate-seed: ${message}`)
@@ -40,6 +43,18 @@ function validate(cards) {
         fail(`${where} (${card.id}): missing translations.${lang}`)
       }
     }
+    if (card.romanizations) {
+      if (typeof card.romanizations !== 'object') {
+        fail(`${where} (${card.id}): romanizations must be an object`)
+      }
+      for (const lang of Object.keys(card.romanizations)) {
+        if (!NON_LATIN_LANGUAGES.has(lang)) {
+          fail(
+            `${where} (${card.id}): romanizations.${lang} is not allowed — ${lang} uses a Latin script`,
+          )
+        }
+      }
+    }
   })
 }
 
@@ -55,12 +70,13 @@ function renderCardsInsert(cards) {
 
 function renderTranslationsInsert(cards, language) {
   const values = cards
-    .map(
-      (card) =>
-        `    (${sqlString(card.id)}, ${sqlString(language)}, ${sqlString(card.translations[language])})`,
-    )
+    .map((card) => {
+      const romanization = card.romanizations?.[language]
+      const romanizationSql = romanization ? sqlString(romanization) : 'NULL'
+      return `    (${sqlString(card.id)}, ${sqlString(language)}, ${sqlString(card.translations[language])}, ${romanizationSql})`
+    })
     .join(',\n')
-  return `INSERT INTO card_translations (card_id, language, translation) VALUES\n${values};`
+  return `INSERT INTO card_translations (card_id, language, translation, romanization) VALUES\n${values};`
 }
 
 function main() {

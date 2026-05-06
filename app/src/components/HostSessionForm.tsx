@@ -9,26 +9,30 @@ import { createHostedSession, type HostedSession } from '@/lib/sessions'
 type Props = {
   targetLanguage: Language
   hostNativeLanguage: Language
-  hostProficiencyLevel: CEFRLevel
+  hostProficiencyLevels: CEFRLevel[]
   onCreated: (result: HostedSession) => void
 }
 
 export function HostSessionForm({
   targetLanguage,
   hostNativeLanguage,
-  hostProficiencyLevel,
+  hostProficiencyLevels,
   onCreated,
 }: Props) {
   const [title, setTitle] = useState('')
+  const [hostDisplayName, setHostDisplayName] = useState('')
   const { loading, error, run } = useAsync(createHostedSession)
 
+  const canSubmit = !!title.trim() && !!hostDisplayName.trim() && !loading
+
   async function handleSubmit() {
-    if (!title.trim()) return
+    if (!canSubmit) return
     const result = await run({
       title: title.trim(),
+      hostDisplayName: hostDisplayName.trim(),
       targetLanguage,
       hostNativeLanguage,
-      hostProficiencyLevel,
+      hostProficiencyLevels,
     })
     if (result) onCreated(result)
   }
@@ -43,11 +47,20 @@ export function HostSessionForm({
           onChange={(e) => setTitle(e.target.value)}
           disabled={loading}
           className="border border-input bg-background rounded-md h-10 px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          placeholder="e.g. Tuesday evening café"
         />
       </label>
-      <Button size="lg" disabled={!title.trim() || loading} onClick={handleSubmit}>
-        {loading ? 'Creating…' : 'Doorgaan'}
+      <label className="flex flex-col gap-2">
+        <span className="text-sm font-medium">Your name</span>
+        <input
+          type="text"
+          value={hostDisplayName}
+          onChange={(e) => setHostDisplayName(e.target.value)}
+          disabled={loading}
+          className="border border-input bg-background rounded-md h-10 px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        />
+      </label>
+      <Button size="lg" disabled={!canSubmit} onClick={handleSubmit}>
+        {loading ? 'Creating…' : 'Continue'}
       </Button>
       {error && <p className="text-sm text-destructive">{friendlyMessage(error)}</p>}
     </div>

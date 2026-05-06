@@ -49,21 +49,48 @@ describe('ModeSelect multiplayer flow', () => {
         persisted: {
           nativeLanguage: 'Dutch',
           targetLanguage: 'Japanese',
-          proficiencyLevel: 'B1',
+          proficiencyLevels: ['B1'],
         },
       },
     )
 
-    await user.click(screen.getByRole('button', { name: 'Met anderen' }))
     await user.type(screen.getByRole('textbox', { name: 'Session title' }), 'Tuesday café')
-    await user.click(screen.getByRole('button', { name: 'Doorgaan' }))
+    await user.type(screen.getByRole('textbox', { name: 'Your name' }), 'Mitchell')
+    await user.click(screen.getByRole('button', { name: 'Continue' }))
 
     expect(vi.mocked(createHostedSession)).toHaveBeenCalledWith({
       title: 'Tuesday café',
+      hostDisplayName: 'Mitchell',
       targetLanguage: 'Japanese',
       hostNativeLanguage: 'Dutch',
-      hostProficiencyLevel: 'B1',
+      hostProficiencyLevels: ['B1'],
     })
     expect(await screen.findByText('session route session-abc')).toBeInTheDocument()
+  })
+
+  it('disables Continue until both session title and host name are entered', async () => {
+    const user = userEvent.setup()
+    renderWithProviders(
+      <Routes>
+        <Route path="/mode" element={<ModeSelect />} />
+      </Routes>,
+      {
+        initialEntries: ['/mode'],
+        persisted: {
+          nativeLanguage: 'Dutch',
+          targetLanguage: 'Japanese',
+          proficiencyLevels: ['B1'],
+        },
+      },
+    )
+
+    const submit = screen.getByRole('button', { name: 'Continue' })
+    expect(submit).toBeDisabled()
+
+    await user.type(screen.getByRole('textbox', { name: 'Session title' }), 'Tuesday café')
+    expect(submit).toBeDisabled()
+
+    await user.type(screen.getByRole('textbox', { name: 'Your name' }), 'Mitchell')
+    expect(submit).toBeEnabled()
   })
 })

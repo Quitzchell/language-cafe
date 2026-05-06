@@ -10,12 +10,14 @@ import {
   LANGUAGE_LABELS,
   levelsForLanguage,
   matchesSessionLanguages,
-  toCEFR,
+  toCEFRLevels,
   type CEFRLevel,
   type JLPTLevel,
   type Language,
 } from '@/lib/languages'
 import { createParticipant, fetchJoinContext } from '@/lib/sessions'
+
+type InputLevel = CEFRLevel | JLPTLevel
 
 export function ParticipantJoin() {
   const { sessionId } = useParams<{ sessionId: string }>()
@@ -27,7 +29,7 @@ export function ParticipantJoin() {
 
   const [displayName, setDisplayName] = useState('')
   const [native, setNative] = useState<Language | null>(null)
-  const [level, setLevel] = useState<CEFRLevel | JLPTLevel | null>(null)
+  const [selected, setSelected] = useState<InputLevel[]>([])
 
   const loadRun = loadContext.run
   useEffect(() => {
@@ -57,9 +59,9 @@ export function ParticipantJoin() {
   if (context.session.status === 'ended') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
-        <h1 className="text-2xl font-semibold">Deze sessie is al beëindigd</h1>
+        <h1 className="text-2xl font-semibold">This session has already ended</h1>
         <p className="text-sm text-muted-foreground">
-          Vraag de host een nieuwe sessie te starten.
+          Ask the host to start a new session.
         </p>
       </div>
     )
@@ -78,11 +80,18 @@ export function ParticipantJoin() {
 
   function handleSelectNative(language: Language) {
     setNative(language)
-    setLevel(null)
+    setSelected([])
+  }
+
+  function toggleLevel(level: InputLevel) {
+    setSelected((prev) =>
+      prev.includes(level) ? prev.filter((l) => l !== level) : [...prev, level],
+    )
   }
 
   async function handleSubmit() {
-    if (!sessionId || !native || !level || !nativeMatches || !practiceLanguage) return
+    if (!sessionId || !native || selected.length === 0 || !nativeMatches || !practiceLanguage)
+      return
     const trimmed = displayName.trim()
     if (!trimmed) return
 
@@ -90,7 +99,7 @@ export function ParticipantJoin() {
       sessionId,
       displayName: trimmed,
       nativeLanguage: native,
-      proficiencyLevel: toCEFR(practiceLanguage, level),
+      proficiencyLevels: toCEFRLevels(practiceLanguage, selected),
     })
     if (participant) {
       setMultiplayer(sessionId, session.title, participant.id)
@@ -99,7 +108,7 @@ export function ParticipantJoin() {
   }
 
   const canSubmit =
-    !!displayName.trim() && nativeMatches && level !== null && !submit.loading
+    !!displayName.trim() && nativeMatches && selected.length > 0 && !submit.loading
 
   return (
     <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
@@ -113,7 +122,6 @@ export function ParticipantJoin() {
           onChange={(e) => setDisplayName(e.target.value)}
           disabled={submit.loading}
           className="border border-input bg-background rounded-md h-10 px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          placeholder="e.g. Yuki"
         />
       </label>
 
@@ -134,22 +142,22 @@ export function ParticipantJoin() {
 
       {native && !nativeMatches && (
         <p className="text-sm text-destructive text-center max-w-xs">
-          Deze taal wordt nog niet ondersteund in deze sessie.
+          This language isn't supported in this session yet.
         </p>
       )}
 
       {nativeMatches && practiceLanguage && (
         <div className="flex flex-col gap-3 w-full max-w-xs">
           <h2 className="text-lg font-medium">
-            Your level in {LANGUAGE_LABELS[practiceLanguage]}
+            Your level(s) in {LANGUAGE_LABELS[practiceLanguage]}
           </h2>
           <div className="grid grid-cols-3 gap-3">
             {levels.map((l) => (
               <Button
                 key={l}
                 size="lg"
-                variant={level === l ? 'default' : 'outline'}
-                onClick={() => setLevel(l)}
+                variant={selected.includes(l) ? 'default' : 'outline'}
+                onClick={() => toggleLevel(l)}
                 disabled={submit.loading}
               >
                 {l}

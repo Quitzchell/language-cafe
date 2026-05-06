@@ -67,7 +67,7 @@ describe('ParticipantJoin happy path', () => {
       sessionId: 'session-1',
       displayName: 'Yuki',
       nativeLanguage: 'Japanese',
-      proficiencyLevel: 'B1',
+      proficiencyLevels: ['B1'],
     })
     expect(await screen.findByText('waiting room')).toBeInTheDocument()
   })
@@ -90,7 +90,52 @@ describe('ParticipantJoin happy path', () => {
       sessionId: 'session-1',
       displayName: 'Jan',
       nativeLanguage: 'Dutch',
-      proficiencyLevel: 'A2',
+      proficiencyLevels: ['A2'],
+    })
+  })
+
+  it('expands JLPT N1 to both C1 and C2 when joining', async () => {
+    vi.mocked(fetchJoinContext).mockResolvedValue({
+      session: makeSession({ host_native_language: 'Japanese', target_language: 'Dutch' }),
+      hostNativeLanguage: 'Japanese',
+    })
+    vi.mocked(createParticipant).mockResolvedValue({ id: 'participant-3' })
+    const user = userEvent.setup()
+    renderJoin()
+
+    await user.type(await screen.findByRole('textbox', { name: 'Your name' }), 'Ken')
+    await user.click(screen.getByRole('button', { name: 'Nederlands' }))
+    await user.click(await screen.findByRole('button', { name: 'N1' }))
+    await user.click(screen.getByRole('button', { name: 'Join session' }))
+
+    expect(vi.mocked(createParticipant)).toHaveBeenCalledWith({
+      sessionId: 'session-1',
+      displayName: 'Ken',
+      nativeLanguage: 'Dutch',
+      proficiencyLevels: ['C1', 'C2'],
+    })
+  })
+
+  it('lets a Dutch-native practitioner of Japanese select multiple JLPT levels', async () => {
+    vi.mocked(fetchJoinContext).mockResolvedValue({
+      session: makeSession({ host_native_language: 'Japanese', target_language: 'Dutch' }),
+      hostNativeLanguage: 'Japanese',
+    })
+    vi.mocked(createParticipant).mockResolvedValue({ id: 'participant-4' })
+    const user = userEvent.setup()
+    renderJoin()
+
+    await user.type(await screen.findByRole('textbox', { name: 'Your name' }), 'Pim')
+    await user.click(screen.getByRole('button', { name: 'Nederlands' }))
+    await user.click(await screen.findByRole('button', { name: 'N3' }))
+    await user.click(screen.getByRole('button', { name: 'N2' }))
+    await user.click(screen.getByRole('button', { name: 'Join session' }))
+
+    expect(vi.mocked(createParticipant)).toHaveBeenCalledWith({
+      sessionId: 'session-1',
+      displayName: 'Pim',
+      nativeLanguage: 'Dutch',
+      proficiencyLevels: ['B1', 'B2'],
     })
   })
 })
@@ -111,7 +156,7 @@ describe('ParticipantJoin guards', () => {
 
     await user.click(await screen.findByRole('button', { name: '日本語' }))
     expect(
-      screen.getByText('Deze taal wordt nog niet ondersteund in deze sessie.'),
+      screen.getByText("This language isn't supported in this session yet."),
     ).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Join session' })).toBeDisabled()
   })
@@ -131,7 +176,7 @@ describe('ParticipantJoin guards', () => {
     await user.click(screen.getByRole('button', { name: 'Join session' }))
 
     expect(
-      await screen.findByText('Die naam is al bezet. Kies een andere.'),
+      await screen.findByText('That name is already taken. Pick another one.'),
     ).toBeInTheDocument()
   })
 
@@ -143,7 +188,7 @@ describe('ParticipantJoin guards', () => {
     renderJoin()
 
     expect(
-      await screen.findByRole('heading', { name: 'Deze sessie is al beëindigd' }),
+      await screen.findByRole('heading', { name: 'This session has already ended' }),
     ).toBeInTheDocument()
     expect(screen.queryByRole('textbox', { name: 'Your name' })).not.toBeInTheDocument()
   })

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
-import { matchesSessionLanguages, toCEFR } from '@/lib/languages'
+import {
+  matchesSessionLanguages,
+  requiresRomanization,
+  toCEFRLevels,
+} from '@/lib/languages'
 
 describe('matchesSessionLanguages', () => {
   it('accepts a native matching the host native language', () => {
@@ -22,14 +26,31 @@ describe('matchesSessionLanguages', () => {
   })
 })
 
-describe('toCEFR', () => {
+describe('toCEFRLevels', () => {
   it('maps JLPT levels to CEFR for Japanese', () => {
-    expect(toCEFR('Japanese', 'N5')).toBe('A1')
-    expect(toCEFR('Japanese', 'N1')).toBe('C1')
+    expect(toCEFRLevels('Japanese', ['N5'])).toEqual(['A1'])
+  })
+
+  it('expands JLPT N1 to both C1 and C2', () => {
+    expect(toCEFRLevels('Japanese', ['N1'])).toEqual(['C1', 'C2'])
+  })
+
+  it('deduplicates overlapping JLPT selections', () => {
+    expect(toCEFRLevels('Japanese', ['N2', 'N1'])).toEqual(['B2', 'C1', 'C2'])
   })
 
   it('passes CEFR levels through for Dutch', () => {
-    expect(toCEFR('Dutch', 'A2')).toBe('A2')
-    expect(toCEFR('Dutch', 'C2')).toBe('C2')
+    expect(toCEFRLevels('Dutch', ['A2'])).toEqual(['A2'])
+    expect(toCEFRLevels('Dutch', ['A2', 'B1'])).toEqual(['A2', 'B1'])
+  })
+})
+
+describe('requiresRomanization', () => {
+  it('returns false for Latin-script languages', () => {
+    expect(requiresRomanization('Dutch')).toBe(false)
+  })
+
+  it('returns true for Japanese', () => {
+    expect(requiresRomanization('Japanese')).toBe(true)
   })
 })
