@@ -3,7 +3,7 @@ import { cleanup } from '@testing-library/react'
 import { afterEach, vi } from 'vitest'
 
 vi.stubEnv('VITE_SUPABASE_URL', 'http://localhost:8000')
-vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'test-anon-key')
+vi.stubEnv('VITE_SUPABASE_PUBLISHABLE_KEY', 'test-publishable-key')
 
 afterEach(() => {
   cleanup()
