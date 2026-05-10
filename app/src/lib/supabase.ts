@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-function requireEnv(name: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY'): string {
+function requireEnv(name: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_PUBLISHABLE_KEY'): string {
   const value = import.meta.env[name]
   if (typeof value !== 'string' || value.trim() === '') {
     throw new Error(
@@ -12,5 +12,5 @@ function requireEnv(name: 'VITE_SUPABASE_URL' | 'VITE_SUPABASE_ANON_KEY'): strin
 
 export const supabase = createClient(
   requireEnv('VITE_SUPABASE_URL'),
-  requireEnv('VITE_SUPABASE_ANON_KEY'),
+  requireEnv('VITE_SUPABASE_PUBLISHABLE_KEY'),
 )
