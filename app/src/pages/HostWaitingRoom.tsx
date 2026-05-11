@@ -118,7 +118,7 @@ export function HostWaitingRoom() {
           <QRCodeSVG value={joinUrl} size={220} className="w-full h-auto" />
         </div>
 
-        <div className="flex flex-col gap-2 w-full items-center">
+        <div className="flex flex-col gap-2 w-4/5 items-center">
           <p className="text-sm text-muted-foreground">Share this link:</p>
           <code className="text-sm break-all text-center">{joinUrl}</code>
           <Button variant="outline" size="sm" onClick={handleCopy}>
@@ -126,7 +126,7 @@ export function HostWaitingRoom() {
           </Button>
         </div>
 
-        <div className="flex flex-col gap-2 w-full">
+        <div className="flex flex-col gap-2 w-full text-center">
           <h2 className="text-lg font-medium">
             Participants ({guestCount})
           </h2>
