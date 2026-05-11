@@ -46,7 +46,7 @@ export function HostWaitingRoom() {
 
   if (access === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="min-h-dvh flex items-center justify-center px-4">
         <p className="text-muted-foreground">Loading…</p>
       </div>
     )
@@ -54,7 +54,7 @@ export function HostWaitingRoom() {
 
   if (access === 'not-found') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">Session not found</h1>
         <p className="text-sm text-muted-foreground">
           Double-check the link and try again.
@@ -65,7 +65,7 @@ export function HostWaitingRoom() {
 
   if (access === 'not-host') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">You aren't the host of this session</h1>
         <p className="text-sm text-muted-foreground">
           Only the person who created the session can open this page.
@@ -76,7 +76,7 @@ export function HostWaitingRoom() {
 
   if (access === 'ended') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">Session ended</h1>
         <Button size="sm" variant="outline" onClick={() => navigate('/')}>
           Back to start
@@ -110,7 +110,7 @@ export function HostWaitingRoom() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
+    <div className="min-h-dvh flex flex-col items-center gap-8 px-4 py-12">
       <h1 className="text-3xl font-semibold">{activeSession.title}</h1>
 
       <div className="bg-white p-4 rounded-md border border-input">

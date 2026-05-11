@@ -26,7 +26,7 @@ export function ParticipantWaitingRoom() {
 
   if (ended) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-3 px-4">
         <h1 className="text-2xl font-semibold">Session ended</h1>
         <p className="text-sm text-muted-foreground">Thanks for joining!</p>
         <Button size="sm" variant="outline" onClick={() => navigate('/')}>
@@ -39,7 +39,7 @@ export function ParticipantWaitingRoom() {
   const guestCount = participants.filter((p) => !p.is_host).length
 
   return (
-    <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
+    <div className="min-h-dvh flex flex-col items-center gap-8 px-4 py-12">
       <h1 className="text-3xl font-semibold">{sessionTitle}</h1>
       <p className="text-muted-foreground">Waiting for the host to start…</p>
 
