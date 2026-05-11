@@ -33,7 +33,7 @@ export function ParticipantPlay() {
 
   if (ended) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-3 px-4">
         <h1 className="text-2xl font-semibold">Session ended</h1>
         <p className="text-sm text-muted-foreground">Thanks for joining!</p>
         <Button size="sm" variant="outline" onClick={() => navigate('/')}>
@@ -89,7 +89,7 @@ export function ParticipantPlay() {
 
   if (isTarget) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-4 py-12">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-4 px-4 py-12">
         <p className="text-xl font-medium text-center">
           {myNativeLanguage
             ? targetPromptText(myNativeLanguage)
@@ -107,7 +107,7 @@ export function ParticipantPlay() {
     : null
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4 py-12">
+    <div className="min-h-dvh flex flex-col items-center justify-center gap-8 px-4 py-12">
       {card && card.text && targetName ? (
         <CardDisplay
           practice={card.text.practice}

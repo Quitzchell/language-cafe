@@ -12,7 +12,7 @@ export function ModeSelect() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4 py-12">
+    <div className="min-h-dvh flex flex-col items-center justify-center gap-8 px-4 py-12">
       <h1 className="text-3xl font-semibold">Start a session</h1>
 
       <HostSessionForm

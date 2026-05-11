@@ -72,7 +72,7 @@ export function HostPlay() {
 
   if (access === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="min-h-dvh flex items-center justify-center px-4">
         <p className="text-muted-foreground">Loading…</p>
       </div>
     )
@@ -80,7 +80,7 @@ export function HostPlay() {
 
   if (access === 'not-found') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">Session not found</h1>
       </div>
     )
@@ -88,7 +88,7 @@ export function HostPlay() {
 
   if (access === 'not-host') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">You aren't the host of this session</h1>
       </div>
     )
@@ -96,7 +96,7 @@ export function HostPlay() {
 
   if (access === 'ended') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-3 px-4">
         <h1 className="text-2xl font-semibold">Session ended</h1>
         <Button size="sm" variant="outline" onClick={() => navigate('/')}>
           Back to start
@@ -107,7 +107,7 @@ export function HostPlay() {
 
   if (access === 'waiting') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-3 px-4">
         <h1 className="text-2xl font-semibold">Session not started yet</h1>
         <Button
           size="sm"
@@ -190,7 +190,7 @@ export function HostPlay() {
 
   if (isTarget) {
     return (
-      <div className="min-h-screen flex flex-col px-4 py-12">
+      <div className="min-h-dvh flex flex-col px-4 py-12">
         <div className="flex-1 flex flex-col items-center justify-center gap-4">
           <p className="text-xl font-medium text-center">
             {myNativeLanguage
@@ -211,7 +211,7 @@ export function HostPlay() {
     : null
 
   return (
-    <div className="min-h-screen flex flex-col px-4 py-12">
+    <div className="min-h-dvh flex flex-col px-4 py-12">
       <div className="flex-1 flex flex-col items-center justify-center gap-8">
         {card && card.text && targetName ? (
           <CardDisplay

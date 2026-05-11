@@ -44,7 +44,7 @@ export function DealerView({
     : null
 
   return (
-    <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
+    <div className="min-h-dvh flex flex-col items-center gap-8 px-4 py-12">
       {card ? (
         card.text && targetName && (
           <div className="flex flex-col items-center gap-4 w-full">

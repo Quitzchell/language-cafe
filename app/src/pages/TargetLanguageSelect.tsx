@@ -43,7 +43,7 @@ export function TargetLanguageSelect() {
   const levels = target ? levelsForLanguage(target) : []
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-8 px-4 py-12">
+    <div className="min-h-dvh flex flex-col items-center justify-center gap-8 px-4 py-12">
       <h1 className="text-3xl font-semibold">Which language do you want to practice?</h1>
 
       <div className="flex flex-col gap-4 w-full max-w-xs">

@@ -38,7 +38,7 @@ export function ParticipantJoin() {
 
   if (loadContext.loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-4">
+      <div className="min-h-dvh flex items-center justify-center px-4">
         <p className="text-muted-foreground">Loading…</p>
       </div>
     )
@@ -47,7 +47,7 @@ export function ParticipantJoin() {
   const context = loadContext.data
   if (!context || !sessionId) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">Session not found</h1>
         <p className="text-sm text-muted-foreground">
           Double-check the link and try again.
@@ -58,7 +58,7 @@ export function ParticipantJoin() {
 
   if (context.session.status === 'ended') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-2 px-4">
+      <div className="min-h-dvh flex flex-col items-center justify-center gap-2 px-4">
         <h1 className="text-2xl font-semibold">This session has already ended</h1>
         <p className="text-sm text-muted-foreground">
           Ask the host to start a new session.
@@ -111,7 +111,7 @@ export function ParticipantJoin() {
     !!displayName.trim() && nativeMatches && selected.length > 0 && !submit.loading
 
   return (
-    <div className="min-h-screen flex flex-col items-center gap-8 px-4 py-12">
+    <div className="min-h-dvh flex flex-col items-center gap-8 px-4 py-12">
       <h1 className="text-3xl font-semibold">{session.title}</h1>
 
       <label className="flex flex-col gap-2 w-full max-w-xs">
