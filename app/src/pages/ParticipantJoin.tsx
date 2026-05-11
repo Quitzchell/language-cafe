@@ -121,7 +121,7 @@ export function ParticipantJoin() {
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           disabled={submit.loading}
-          className="border border-input bg-background rounded-md h-10 px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="border border-input bg-background rounded-md h-10 px-3 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
       </label>
 
