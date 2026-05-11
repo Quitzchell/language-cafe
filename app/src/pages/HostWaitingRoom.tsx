@@ -110,64 +110,66 @@ export function HostWaitingRoom() {
   }
 
   return (
-    <div className="min-h-dvh flex flex-col items-center gap-8 px-4 py-12">
-      <h1 className="text-3xl font-semibold">{activeSession.title}</h1>
+    <div className="min-h-dvh flex justify-center px-4 py-12">
+      <div className="w-full max-w-md flex flex-col items-center gap-8">
+        <h1 className="text-3xl font-semibold">{activeSession.title}</h1>
 
-      <div className="bg-white p-4 rounded-md border border-input">
-        <QRCodeSVG value={joinUrl} size={220} />
-      </div>
+        <div className="bg-white p-4 rounded-md border border-input w-full max-w-63">
+          <QRCodeSVG value={joinUrl} size={220} className="w-full h-auto" />
+        </div>
 
-      <div className="flex flex-col gap-2 w-full max-w-md items-center">
-        <p className="text-sm text-muted-foreground">Share this link:</p>
-        <code className="text-sm break-all text-center">{joinUrl}</code>
-        <Button variant="outline" size="sm" onClick={handleCopy}>
-          {copied ? 'Copied!' : 'Copy link'}
+        <div className="flex flex-col gap-2 w-full items-center">
+          <p className="text-sm text-muted-foreground">Share this link:</p>
+          <code className="text-sm break-all text-center">{joinUrl}</code>
+          <Button variant="outline" size="sm" onClick={handleCopy}>
+            {copied ? 'Copied!' : 'Copy link'}
+          </Button>
+        </div>
+
+        <div className="flex flex-col gap-2 w-full">
+          <h2 className="text-lg font-medium">
+            Participants ({guestCount})
+          </h2>
+          <ul className="flex flex-col gap-1">
+            {participants.map((p) => (
+              <li key={p.id} className="text-sm">
+                {p.display_name}
+                {p.is_host && <span className="text-muted-foreground"> (host)</span>}
+              </li>
+            ))}
+          </ul>
+          {guestCount === 0 && (
+            <p className="text-sm text-muted-foreground italic">
+              Waiting for someone to join…
+            </p>
+          )}
+        </div>
+
+        <Button
+          size="lg"
+          disabled={!canStart || startAction.loading}
+          onClick={handleStart}
+        >
+          {startAction.loading ? 'Starting…' : 'Start session'}
         </Button>
-      </div>
 
-      <div className="flex flex-col gap-2 w-full max-w-md">
-        <h2 className="text-lg font-medium">
-          Participants ({guestCount})
-        </h2>
-        <ul className="flex flex-col gap-1">
-          {participants.map((p) => (
-            <li key={p.id} className="text-sm">
-              {p.display_name}
-              {p.is_host && <span className="text-muted-foreground"> (host)</span>}
-            </li>
-          ))}
-        </ul>
-        {guestCount === 0 && (
-          <p className="text-sm text-muted-foreground italic">
-            Waiting for someone to join…
-          </p>
+        {startAction.error && (
+          <p className="text-sm text-destructive">{friendlyMessage(startAction.error)}</p>
+        )}
+
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={endAction.loading}
+          onClick={handleEnd}
+        >
+          {endAction.loading ? 'Ending…' : 'End session'}
+        </Button>
+
+        {endAction.error && (
+          <p className="text-sm text-destructive">{friendlyMessage(endAction.error)}</p>
         )}
       </div>
-
-      <Button
-        size="lg"
-        disabled={!canStart || startAction.loading}
-        onClick={handleStart}
-      >
-        {startAction.loading ? 'Starting…' : 'Start session'}
-      </Button>
-
-      {startAction.error && (
-        <p className="text-sm text-destructive">{friendlyMessage(startAction.error)}</p>
-      )}
-
-      <Button
-        size="sm"
-        variant="outline"
-        disabled={endAction.loading}
-        onClick={handleEnd}
-      >
-        {endAction.loading ? 'Ending…' : 'End session'}
-      </Button>
-
-      {endAction.error && (
-        <p className="text-sm text-destructive">{friendlyMessage(endAction.error)}</p>
-      )}
     </div>
   )
 }
