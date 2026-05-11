@@ -103,63 +103,85 @@ export function SessionLiveProvider({
   useEffect(() => {
     cancelledRef.current = false
 
-    const unsubParticipants = subscribeToParticipants(sessionId, (p) => {
-      setParticipants((prev) =>
-        prev.some((x) => x.id === p.id) ? prev : [...prev, p],
-      )
-    })
-    const unsubEvents = subscribeToSessionEvents(sessionId, applyEvent)
+    let unsubParticipants: (() => void) | null = null
+    let unsubEvents: (() => void) | null = null
 
-    fetchSessionById(sessionId).then((s) => {
-      if (cancelledRef.current) return
-      setSession(s)
-      setSessionLoaded(true)
-      if (s?.status === 'ended') setEnded(true)
-    })
-
-    listParticipants(sessionId).then((rows) => {
-      if (cancelledRef.current) return
-      setParticipants(rows)
-      // Default dealer to the host when no turn_passed has landed yet.
-      fetchCurrentDealer(sessionId).then((dealerId) => {
-        if (cancelledRef.current) return
-        setCurrentDealerId(
-          dealerId ?? rows.find((p) => p.is_host)?.id ?? null,
+    const subscribe = () => {
+      unsubParticipants = subscribeToParticipants(sessionId, (p) => {
+        setParticipants((prev) =>
+          prev.some((x) => x.id === p.id) ? prev : [...prev, p],
         )
       })
-    })
+      unsubEvents = subscribeToSessionEvents(sessionId, applyEvent)
+    }
 
-    listCardDrawnEvents(sessionId).then(async (events) => {
-      if (cancelledRef.current) return
-      setCardDrawnHistory(events)
-      const last = events[events.length - 1]
-      if (!last) return
-      if (await hasTurnPassedAfter(sessionId, last.created_at)) return
-      if (cancelledRef.current) return
-      const payload = last.payload
-      setCard((prev) => prev ?? { payload, text: null })
-      fetchCardWithTranslations(
-        payload.card_id,
-        payload.practice_language,
-        payload.native_language,
-      )
-        .then((text) => {
+    const refetch = () => {
+      fetchSessionById(sessionId).then((s) => {
+        if (cancelledRef.current) return
+        setSession(s)
+        setSessionLoaded(true)
+        if (s?.status === 'ended') setEnded(true)
+      })
+
+      listParticipants(sessionId).then((rows) => {
+        if (cancelledRef.current) return
+        setParticipants(rows)
+        fetchCurrentDealer(sessionId).then((dealerId) => {
           if (cancelledRef.current) return
-          setCard((prev) =>
-            prev && prev.payload.card_id === payload.card_id && !prev.text
-              ? { payload, text }
-              : prev,
+          setCurrentDealerId(
+            dealerId ?? rows.find((p) => p.is_host)?.id ?? null,
           )
         })
-        .catch(() => {
-          // Leave skeleton; surface silently — matches applyEvent.
-        })
-    })
+      })
+
+      listCardDrawnEvents(sessionId).then(async (events) => {
+        if (cancelledRef.current) return
+        setCardDrawnHistory(events)
+        const last = events[events.length - 1]
+        if (!last) return
+        if (await hasTurnPassedAfter(sessionId, last.created_at)) return
+        if (cancelledRef.current) return
+        const payload = last.payload
+        setCard((prev) => prev ?? { payload, text: null })
+        fetchCardWithTranslations(
+          payload.card_id,
+          payload.practice_language,
+          payload.native_language,
+        )
+          .then((text) => {
+            if (cancelledRef.current) return
+            setCard((prev) =>
+              prev && prev.payload.card_id === payload.card_id && !prev.text
+                ? { payload, text }
+                : prev,
+            )
+          })
+          .catch(() => {
+            // Leave skeleton; surface silently — matches applyEvent.
+          })
+      })
+    }
+
+    subscribe()
+    refetch()
+
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') return
+      // Tear down stale channels and reopen — mobile OSes often kill the
+      // websocket while the tab is backgrounded, and broadcasts that fired
+      // during the gap are gone, so we also refetch from the DB to catch up.
+      unsubParticipants?.()
+      unsubEvents?.()
+      subscribe()
+      refetch()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
 
     return () => {
       cancelledRef.current = true
-      unsubParticipants()
-      unsubEvents()
+      unsubParticipants?.()
+      unsubEvents?.()
+      document.removeEventListener('visibilitychange', onVisibility)
     }
   }, [sessionId, applyEvent])
 
