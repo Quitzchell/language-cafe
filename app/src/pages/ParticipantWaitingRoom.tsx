@@ -43,7 +43,7 @@ export function ParticipantWaitingRoom() {
       <h1 className="text-3xl font-semibold">{sessionTitle}</h1>
       <p className="text-muted-foreground">Waiting for the host to start…</p>
 
-      <div className="flex flex-col gap-2 w-full max-w-md">
+      <div className="flex flex-col gap-2 w-full max-w-md text-center">
         <h2 className="text-lg font-medium">
           Participants ({guestCount})
         </h2>

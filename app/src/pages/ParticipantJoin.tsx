@@ -121,12 +121,12 @@ export function ParticipantJoin() {
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           disabled={submit.loading}
-          className="border border-input bg-background rounded-md h-10 px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="border border-input bg-background rounded-md h-10 px-3 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
       </label>
 
       <div className="flex flex-col gap-3 w-full max-w-xs">
-        <h2 className="text-lg font-medium">What is your native language?</h2>
+        <h2 className="text-lg font-medium text-center">What is your native language?</h2>
         {LANGUAGES.map((language) => (
           <Button
             key={language.code}
@@ -148,7 +148,7 @@ export function ParticipantJoin() {
 
       {nativeMatches && practiceLanguage && (
         <div className="flex flex-col gap-3 w-full max-w-xs">
-          <h2 className="text-lg font-medium">
+          <h2 className="text-lg font-medium text-center">
             Your level(s) in {LANGUAGE_LABELS[practiceLanguage]}
           </h2>
           <div className="grid grid-cols-3 gap-3">

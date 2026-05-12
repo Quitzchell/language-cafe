@@ -46,7 +46,7 @@ export function HostSessionForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           disabled={loading}
-          className="border border-input bg-background rounded-md h-10 px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="border border-input bg-background rounded-md h-10 px-3 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
       </label>
       <label className="flex flex-col gap-2">
@@ -56,7 +56,7 @@ export function HostSessionForm({
           value={hostDisplayName}
           onChange={(e) => setHostDisplayName(e.target.value)}
           disabled={loading}
-          className="border border-input bg-background rounded-md h-10 px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          className="border border-input bg-background rounded-md h-10 px-3 text-base focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
       </label>
       <Button size="lg" disabled={!canSubmit} onClick={handleSubmit}>
